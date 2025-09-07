@@ -9,6 +9,7 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+
 model User {
   id        Int     @id @default(autoincrement())
   name      String
@@ -16,7 +17,7 @@ model User {
   email     String  @unique
   password  String
 
-  // Relations for inherited models
+  // Relations
   inventoryManager InventoryManager?
   salesperson      Salesperson?
 
@@ -37,8 +38,7 @@ model Store {
 }
 
 model InventoryManager {
-  id      Int @id @default(autoincrement())
-  userId  Int @unique
+  userId  Int @id
   storeId Int @unique
 
   // Relations
@@ -51,8 +51,7 @@ model InventoryManager {
 
 
 model Salesperson {
-  id      Int @id @default(autoincrement())
-  userId  Int @unique
+  userId  Int @id
 
   // Relations
   user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -120,8 +119,8 @@ model Order {
   productId          Int
   sentBatchId        Int?
 
-  inventoryManager   InventoryManager @relation(fields: [inventoryManagerId], references: [id], onDelete: Cascade)
-  salesperson        Salesperson      @relation(fields: [salespersonId], references: [id], onDelete: Cascade)
+  inventoryManager   InventoryManager @relation(fields: [inventoryManagerId], references: [userId], onDelete: Cascade)
+  salesperson        Salesperson      @relation(fields: [salespersonId], references: [userId], onDelete: Cascade)
   product            Product          @relation(fields: [productId], references: [id], onDelete: Cascade)
   sentBatch          Batch?           @relation(fields: [sentBatchId], references: [id], onDelete: SetNull)
 
