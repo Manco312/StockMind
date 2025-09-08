@@ -1,8 +1,13 @@
-import { Button } from "@/components/Button"
-import { Card } from "@/components/Card"
-import Image from 'next/image'
+"use client";
+
+import { Button } from "@/components/Button";
+import { Card } from "@/components/Card";
+import Image from 'next/image';
+import { useRouter } from "next/navigation";
 
 export default function LandingPage() {
+  const router = useRouter();
+
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
       <div className="w-full max-w-6xl grid lg:grid-cols-2 gap-8 items-center">
@@ -53,6 +58,7 @@ export default function LandingPage() {
             <div className="pt-4">
               <Button
                 size="lg"
+                onClick={() => router.push("/cuentas/login")}
                 className="bg-blue-500 hover:bg-blue-600 text-white px-8 py-3 text-lg rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-200"
               >
                 Entrar

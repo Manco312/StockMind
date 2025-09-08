@@ -1,11 +1,16 @@
-import React from 'react';
+import { auth } from "@/src/auth";
 
-const InventarioPage: React.FC = () => {
-    return (
-        <div>
-            <h1>Hello World</h1>
-        </div>
-    );
-};
+export default async function InventarioPage() {
+  const session = await auth();
 
-export default InventarioPage;
+  if (!session?.user) {
+    return <p>No tienes acceso. Inicia sesión.</p>;
+  }
+
+  return (
+    <div>
+      <h1>Bienvenido {session.user.name}</h1>
+
+    </div>
+  );
+}
