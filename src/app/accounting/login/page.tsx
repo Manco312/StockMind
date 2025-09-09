@@ -8,13 +8,12 @@ import { useSearchParams } from "next/navigation";
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [userType, setUserType] = useState("distributor");
 
   const searchParams = useSearchParams();
   const error = searchParams.get("error");
   const errorMessage =
-    error === "CredentialsSignin"
-      ? "Usuario o contraseña incorrectos"
-      : null;
+    error === "CredentialsSignin" ? "Usuario o contraseña incorrectos" : null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,69 +28,102 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-6">
-      <div className="w-full max-w-5xl grid lg:grid-cols-2 gap-8 items-center bg-white rounded-3xl shadow-xl overflow-hidden">
-        
-        {/* Left side - Logo */}
-        <div className="flex items-center justify-center p-8 ">
-          <Image
-            src="/landing/logo.png"
-            alt="Logo"
-            width={350}
-            height={350}
-            className="object-contain"
-          />
+    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
+      <div className="w-full max-w-5xl grid grid-cols-1 lg:grid-cols-2 gap-0 items-stretch bg-white rounded-2xl shadow-xl overflow-hidden min-h-[600px]">
+        {/* Left side - Illustration Panel (Hidden on mobile) */}
+        <div className="hidden lg:flex bg-slate-700 rounded-l-2xl p-6 items-center justify-center">
+          <div className="text-center">
+            <div className="bg-white rounded-xl p-4 mb-4 shadow-lg max-w-sm">
+              <Image
+                src="/landing/inventario.png"
+                alt="Ilustración de inventario"
+                width={280}
+                height={180}
+                className="object-contain w-full h-auto"
+              />
+            </div>
+          </div>
         </div>
 
         {/* Right side - Login Form */}
-        <div className="p-10 lg:p-16">
-          <h2 className="text-3xl font-bold text-slate-700 mb-8">
-            Inicia sesión en <span className="text-blue-600">StockMind</span>
-          </h2>
+        <div className="p-6 sm:p-8 lg:p-12 flex flex-col justify-center">
+          {/* Header with Logo */}
+          <div className="mb-8 flex justify-center">
+            <Image
+              src="/landing/logo.png"
+              alt="StockMind Logo"
+              width={300}
+              height={120}
+              className="mb-4"
+            />
+          </div>
 
           {errorMessage && (
             <p className="mb-4 text-red-500 font-medium">{errorMessage}</p>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label className="block text-slate-600 font-medium mb-2">Email</label>
+              <label className="block text-gray-700 font-semibold mb-2">
+                Usuario
+              </label>
               <input
                 type="email"
-                placeholder="Ingresa tu correo"
+                placeholder="Ingresa tu usuario"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 p-3 placeholder-gray-600 text-gray-900 bg-white/70 focus:bg-white"
+                className="w-full rounded-lg border-2 border-gray-200 p-4 text-gray-900 bg-white focus:border-blue-500 focus:outline-none transition-colors"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-slate-600 font-medium mb-2">Contraseña</label>
+              <label className="block text-gray-700 font-semibold mb-2">
+                Contraseña
+              </label>
               <input
                 type="password"
                 placeholder="Ingresa tu contraseña"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 p-3 placeholder-gray-600 text-gray-900 bg-white/70 focus:bg-white"
+                className="w-full rounded-lg border-2 border-gray-200 p-4 text-gray-900 bg-white focus:border-blue-500 focus:outline-none transition-colors"
                 required
               />
             </div>
 
+            {/* Role Selection */}
+            <div className="flex rounded-full overflow-hidden border-2 border-gray-200">
+              <button
+                type="button"
+                onClick={() => setUserType("distributor")}
+                className={`flex-1 py-3 px-3 text-sm font-semibold transition-colors ${
+                  userType === "distributor"
+                    ? "bg-blue-400 text-white"
+                    : "bg-white text-gray-700 hover:bg-gray-50"
+                }`}
+              >
+                Soy distribuidor
+              </button>
+              <button
+                type="button"
+                onClick={() => setUserType("store")}
+                className={`flex-1 py-3 px-3 text-sm font-semibold transition-colors ${
+                  userType === "store"
+                    ? "bg-blue-400 text-white"
+                    : "bg-white text-gray-700 hover:bg-gray-50"
+                }`}
+              >
+                Soy dueño de tienda
+              </button>
+            </div>
+
             <button
               type="submit"
-              className="w-full p-3 bg-blue-600 text-white rounded-lg font-medium shadow-md hover:bg-blue-700 hover:shadow-lg transition-all duration-200"
+              className="w-full p-3 bg-blue-400 text-white rounded-full font-semibold hover:bg-blue-500 transition-colors"
             >
-              Entrar
+              Iniciar Sesión
             </button>
           </form>
-
-          <p className="mt-6 text-sm text-slate-500">
-            ¿No tienes una cuenta?{" "}
-            <a href="#" className="text-blue-600 hover:underline">
-              Contáctanos
-            </a>
-          </p>
         </div>
       </div>
     </div>
