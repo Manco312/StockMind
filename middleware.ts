@@ -6,7 +6,7 @@ export default auth((req) => {
 
   // Si no está logueado, lo mando al login
   if (!isLoggedIn) {
-    const loginUrl = new URL("/cuentas/login", req.nextUrl.origin);
+    const loginUrl = new URL("/accounting/login", req.nextUrl.origin);
     return NextResponse.redirect(loginUrl);
   }
 
@@ -16,6 +16,7 @@ export default auth((req) => {
 // Aplica a todas las rutas privadas
 export const config = {
   matcher: [
+    "/dashboard/:path*",
     "/inventario/:path*",
     "/inteligencia/:path*",
     "/pedidos/:path*",

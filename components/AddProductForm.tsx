@@ -5,7 +5,12 @@ import { useRouter } from "next/navigation";
 import { Card } from "@/components/Card";
 import { Button } from "@/components/Button";
 
-type Product = { id: number; title: string; price: number };
+type Product = {
+  id: number;
+  title: string;
+  price: number;
+  description: string;
+};
 
 export default function AddProductForm({ products }: { products: Product[] }) {
   const [selected, setSelected] = useState<number[]>([]);
@@ -37,7 +42,6 @@ export default function AddProductForm({ products }: { products: Product[] }) {
 
   return (
     <div className="min-h-screen bg-gray-100 p-6 flex flex-col items-center">
-
       <div className="w-full max-w-6xl mb-4">
         <Button
           size="md"
@@ -48,10 +52,7 @@ export default function AddProductForm({ products }: { products: Product[] }) {
         </Button>
       </div>
 
-      <form
-        onSubmit={handleSubmit}
-        className="max-w-6xl w-full space-y-6"
-      >
+      <form onSubmit={handleSubmit} className="max-w-6xl w-full space-y-6">
         <h1 className="text-4xl font-bold text-slate-800 text-center mb-6">
           Agregar productos de la distribuidora
         </h1>
@@ -79,11 +80,17 @@ export default function AddProductForm({ products }: { products: Product[] }) {
                     <h2 className="font-semibold text-lg text-slate-800 mb-2">
                       {p.title}
                     </h2>
+                    <p className="text-gray-600 text-sm mb-2">
+                      {p.description}
+                    </p>
                     <p className="text-gray-600">Precio: ${p.price}</p>
+                    <p className="text-gray-500 text-xs">ID: {p.id}</p>
                   </div>
                   <p
                     className={`mt-3 font-medium text-sm ${
-                      selected.includes(p.id) ? "text-blue-600" : "text-gray-700"
+                      selected.includes(p.id)
+                        ? "text-blue-600"
+                        : "text-gray-700"
                     }`}
                   >
                     {selected.includes(p.id) ? "Seleccionado ✅" : "Disponible"}

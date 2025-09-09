@@ -24,7 +24,7 @@ export default function LoginForm({ errorMessage }: LoginFormProps) {
         email,
         password,
         redirect: true,
-        callbackUrl: "/inventory/store",
+        callbackUrl: "/dashboard",
       });
     } catch (error) {
       console.error("Login error:", error);
