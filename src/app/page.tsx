@@ -58,7 +58,7 @@ export default function LandingPage() {
             <div className="pt-4">
               <Button
                 size="lg"
-                onClick={() => router.push("/cuentas/login")}
+                onClick={() => router.push("/accounting/login")}
                 className="bg-blue-500 hover:bg-blue-600 text-white px-8 py-3 text-lg rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-200"
               >
                 Entrar
