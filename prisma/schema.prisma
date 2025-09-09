@@ -26,6 +26,7 @@ model User {
 
 model Store {
   id                Int     @id @default(autoincrement())
+  name              String  // nombre de la tienda
   address           String
   neighborhood      String
   capital           Int
@@ -51,24 +52,27 @@ model InventoryManager {
 
 
 model Salesperson {
-  userId  Int @id
+  userId     Int @id
 
   // Relations
-  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  orders  Order[]
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orders     Order[]
+  inventory  Inventory? @relation("SalespersonInventory", fields: [inventoryId], references: [id])
+  inventoryId Int?       // FK al inventario de distribuidor
 
   @@map("salespeople")
 }
 
 model Inventory {
   id                Int     @id @default(autoincrement())
-  type              String  // "Store" or "Distributor"
+  type              String  // "Store" o "Distributor"
   storeId           Int?    @unique
 
   // Relations
   store             Store?      @relation(fields: [storeId], references: [id], onDelete: Cascade)
   offeredProducts   Product[]
   batches           Batch[]
+  salespeople       Salesperson[] @relation("SalespersonInventory") // relación inversa
 
   @@map("inventories")
 }
