@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import AppLayout from "@/components/AppLayout";
 import { Card } from "@/components/Card";
+import EditPriceModal from "@/components/EditPriceModal";
+import Notification from "@/components/Notification";
 
 type UserType = "distributor" | "salesperson" | "inventory_manager";
 
@@ -30,6 +32,8 @@ export default function InventoryStoreClient({
 }: InventoryStoreClientProps) {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [notification, setNotification] = useState({ message: "", type: "" as "success" | "error" });
 
   const filteredProducts = products.filter(
     (product) =>
@@ -41,6 +45,30 @@ export default function InventoryStoreClient({
     router.push("/inventory/store/add");
   };
 
+  const handleUpdatePrice = async (productId: number, newPrice: number) => {
+    try {
+      const response = await fetch("/api/inventory/update-price", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ productId, newPrice }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Error al actualizar el precio");
+      }
+
+      setEditingProduct(null);
+      setNotification({ message: "Precio actualizado con éxito", type: "success" });
+      router.refresh();
+
+    } catch (error: any) {
+      setNotification({ message: error.message, type: "error" });
+    } 
+  };
+
   return (
     <AppLayout
       userType={userType}
@@ -49,6 +77,14 @@ export default function InventoryStoreClient({
       title={`Inventario de ${storeName}`}
     >
       <div className="space-y-6">
+        {notification.message && (
+            <Notification 
+                message={notification.message} 
+                type={notification.type} 
+                onClose={() => setNotification({ message: "", type: ""})} 
+            />
+        )}
+
         {/* Summary Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           <div className="bg-white rounded-lg sm:rounded-xl shadow-lg p-4 sm:p-6">
@@ -167,7 +203,10 @@ export default function InventoryStoreClient({
                     {product.available ? "Disponible" : "Agotado"}
                   </span>
 
-                  <button className="text-blue-600 hover:text-blue-700 text-sm font-medium">
+                  <button
+                    onClick={() => setEditingProduct(product)}
+                    className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                  >
                     Editar
                   </button>
                 </div>
@@ -176,6 +215,11 @@ export default function InventoryStoreClient({
           </div>
         )}
       </div>
+      <EditPriceModal
+        product={editingProduct}
+        onClose={() => setEditingProduct(null)}
+        onSave={handleUpdatePrice}
+      />
     </AppLayout>
   );
 }
