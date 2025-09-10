@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
 
@@ -13,6 +14,7 @@ export default function Sidebar({
   activeSection = "inicio",
 }: SidebarProps) {
   const router = useRouter();
+  const [isOpen, setIsOpen] = useState(false);
 
   const getNavigationItems = () => {
     switch (userType) {
@@ -73,58 +75,98 @@ export default function Sidebar({
   };
 
   return (
-    <div className="w-64 bg-slate-800 text-white h-screen flex flex-col">
-      {/* Logo */}
-      <div className="p-6 border-b border-slate-700">
-        <h2 className="text-xl font-bold">StockMind</h2>
-      </div>
-
-      {/* Navigation */}
-      <nav className="flex-1 p-4">
-        <ul className="space-y-2">
-          {getNavigationItems().map((item) => (
-            <li key={item.id}>
-              <button
-                onClick={() => handleNavigation(item.id)}
-                className={`w-full text-left px-4 py-3 rounded-lg transition-colors flex items-center space-x-3 ${
-                  activeSection === item.id
-                    ? "bg-blue-600 text-white"
-                    : "text-slate-300 hover:bg-slate-700 hover:text-white"
-                }`}
-              >
-                <span className="text-lg">{item.icon}</span>
-                <span>{item.label}</span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      </nav>
-
-      {/* Action Buttons */}
-      <div className="p-4 border-t border-slate-700 space-y-3">
-        {userType === "inventory_manager" && (
-          <button
-            onClick={() => router.push("/inventory/store/add")}
-            className="w-full bg-green-600 hover:bg-green-700 text-white py-3 px-4 rounded-lg font-medium transition-colors"
-          >
-            Agregar Productos
-          </button>
-        )}
-        {(userType === "salesperson" || userType === "distributor") && (
-          <button
-            onClick={handleAddStore}
-            className="w-full bg-red-600 hover:bg-red-700 text-white py-3 px-4 rounded-lg font-medium transition-colors"
-          >
-            Añadir Tienda
-          </button>
-        )}
-        <button
-          onClick={handleLogout}
-          className="w-full text-slate-300 hover:text-white py-2 transition-colors"
+    <>
+      {/* Mobile menu button */}
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="lg:hidden fixed top-3 left-3 z-50 bg-slate-800 text-white p-2 rounded-md shadow-lg"
+        title="Abrir menú"
+        aria-label="Abrir menú de navegación"
+      >
+        <svg
+          className="w-6 h-6"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
         >
-          Cerrar Sesión
-        </button>
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M4 6h16M4 12h16M4 18h16"
+          />
+        </svg>
+      </button>
+
+      {/* Overlay for mobile */}
+      {isOpen && (
+        <div
+          className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-40"
+          onClick={() => setIsOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <div
+        className={`
+        fixed lg:static inset-y-0 left-0 z-50
+        w-64 bg-slate-800 text-white h-screen flex flex-col
+        transform transition-transform duration-300 ease-in-out
+        ${isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
+      `}
+      >
+        {/* Logo */}
+        <div className="p-6 border-b border-slate-700">
+          <h2 className="text-xl font-bold">StockMind</h2>
+        </div>
+
+        {/* Navigation */}
+        <nav className="flex-1 p-4">
+          <ul className="space-y-2">
+            {getNavigationItems().map((item) => (
+              <li key={item.id}>
+                <button
+                  onClick={() => handleNavigation(item.id)}
+                  className={`w-full text-left px-4 py-3 rounded-lg transition-colors flex items-center space-x-3 ${
+                    activeSection === item.id
+                      ? "bg-blue-600 text-white"
+                      : "text-slate-300 hover:bg-slate-700 hover:text-white"
+                  }`}
+                >
+                  <span className="text-lg">{item.icon}</span>
+                  <span>{item.label}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </nav>
+
+        {/* Action Buttons */}
+        <div className="p-4 border-t border-slate-700 space-y-3">
+          {userType === "inventory_manager" && (
+            <button
+              onClick={() => router.push("/inventory/store/add")}
+              className="w-full bg-green-600 hover:bg-green-700 text-white py-3 px-4 rounded-lg font-medium transition-colors"
+            >
+              Agregar Productos
+            </button>
+          )}
+          {(userType === "salesperson" || userType === "distributor") && (
+            <button
+              onClick={handleAddStore}
+              className="w-full bg-red-600 hover:bg-red-700 text-white py-3 px-4 rounded-lg font-medium transition-colors"
+            >
+              Añadir Tienda
+            </button>
+          )}
+          <button
+            onClick={handleLogout}
+            className="w-full text-slate-300 hover:text-white py-2 transition-colors"
+          >
+            Cerrar Sesión
+          </button>
+        </div>
       </div>
-    </div>
+    </>
   );
 }

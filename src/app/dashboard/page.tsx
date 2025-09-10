@@ -1,11 +1,7 @@
-"use client";
-
-import { useState, useEffect } from "react";
-import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
-import Sidebar from "@/components/Sidebar";
-import Header from "@/components/Header";
-import DashboardCard from "@/components/DashboardCard";
+import { auth } from "@/src/auth";
+import { prisma } from "@/src/lib/prisma";
+import { redirect } from "next/navigation";
+import DashboardClient from "./DashboardClient";
 
 // Iconos SVG
 const InventoryIcon = () => (
@@ -48,36 +44,35 @@ const AlertIcon = () => (
 
 type UserType = "distributor" | "salesperson" | "inventory_manager";
 
-export default function Dashboard() {
-  const { data: session, status } = useSession();
-  const router = useRouter();
-  const [userType, setUserType] = useState<UserType>("inventory_manager");
-  const [activeSection, setActiveSection] = useState("inicio");
+export default async function Dashboard() {
+  const session = await auth();
 
-  useEffect(() => {
-    if (status === "unauthenticated") {
-      router.push("/accounting/login");
-      return;
-    }
+  if (!session?.user?.email) {
+    redirect("/accounting/login");
+  }
 
-    // Determinar tipo de usuario basado en la sesión
-    // En producción, esto vendría de la base de datos
-    if (session?.user?.email) {
-      // Lógica para determinar el tipo de usuario
-      // Por ahora usamos un valor por defecto
-      setUserType("inventory_manager");
-    }
-  }, [session, status, router]);
+  // Obtener información del usuario desde la base de datos
+  const user = await prisma.user.findUnique({
+    where: { email: session.user.email },
+    include: {
+      inventoryManager: true,
+      salesperson: true,
+    },
+  });
 
-  if (status === "loading") {
-    return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Cargando...</p>
-        </div>
-      </div>
-    );
+  if (!user) {
+    redirect("/accounting/login");
+  }
+
+  // Determinar tipo de usuario
+  let userType: UserType = "inventory_manager";
+  if (user.inventoryManager) {
+    userType = "inventory_manager";
+  } else if (user.salesperson) {
+    userType = "salesperson";
+  } else {
+    // Si no tiene rol específico, usar distributor como fallback
+    userType = "distributor";
   }
 
   // Datos dinámicos según el tipo de usuario
@@ -176,8 +171,8 @@ export default function Dashboard() {
             },
           ],
           recentActivity: [
-            { title: "Stock", description: "Inventario distribuidora" },
-            { title: "Top Items", description: "Productos más solicitados" },
+            { title: "Ventas", description: "Gestión de ventas" },
+            { title: "Clientes", description: "Relación con clientes" },
           ],
           orders: [
             {
@@ -221,154 +216,11 @@ export default function Dashboard() {
 
   const dashboardData = getDashboardData();
 
-  const handleCardClick = (title: string) => {
-    console.log(`Clicked on: ${title}`);
-    // Implementar navegación según la tarjeta clickeada
-  };
-
   return (
-    <div className="min-h-screen bg-gray-100 flex">
-      {/* Sidebar */}
-      <Sidebar userType={userType} activeSection={activeSection} />
-
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col">
-        {/* Header */}
-        <Header userType={userType} userName={session?.user?.name} />
-
-        {/* Dashboard Content */}
-        <main className="flex-1 p-6">
-          {/* Inventory Overview */}
-          <section className="mb-8">
-            <h2 className="text-2xl font-bold text-gray-800 mb-6">
-              Resumen de Inventario
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {dashboardData.cards.map((card, index) => (
-                <DashboardCard
-                  key={index}
-                  title={card.title}
-                  value={card.value}
-                  icon={card.icon}
-                  color={card.color}
-                  onClick={() => handleCardClick(card.title)}
-                />
-              ))}
-            </div>
-          </section>
-
-          {/* Recent Activity */}
-          <section className="mb-8">
-            <h2 className="text-2xl font-bold text-gray-800 mb-6">
-              Actividad Reciente
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {dashboardData.recentActivity.map((activity, index) => (
-                <div key={index} className="bg-white rounded-xl shadow-lg p-6">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-2">
-                    {activity.title}
-                  </h3>
-                  <p className="text-gray-600">{activity.description}</p>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          {/* Recent Updates */}
-          <section>
-            <h2 className="text-2xl font-bold text-gray-800 mb-6">
-              {userType === "inventory_manager"
-                ? "Actualizaciones Recientes de Inventario"
-                : "Pedidos Recientes"}
-            </h2>
-            <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        <input
-                          type="checkbox"
-                          className="rounded"
-                          title="Seleccionar todo"
-                        />
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        {userType === "inventory_manager" ? "Nombre" : "Tienda"}
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Cantidad
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        {userType === "inventory_manager"
-                          ? "Compañía"
-                          : "Producto"}
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        {userType === "inventory_manager"
-                          ? "Ubicación"
-                          : "Estado"}
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        {userType === "inventory_manager"
-                          ? "Reabastecer"
-                          : "Prioridad"}
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {dashboardData.orders.map((order, index) => (
-                      <tr
-                        key={index}
-                        className={index === 1 ? "bg-purple-50" : ""}
-                      >
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <input
-                            type="checkbox"
-                            className="rounded"
-                            defaultChecked={index === 1}
-                            title={`Seleccionar ${order.name}`}
-                          />
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          {order.name}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {order.quantity}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {order.company}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {order.location}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex">
-                            {[...Array(5)].map((_, i) => (
-                              <svg
-                                key={i}
-                                className={`h-4 w-4 ${
-                                  i < order.rating
-                                    ? "text-purple-500"
-                                    : "text-gray-300"
-                                }`}
-                                fill="currentColor"
-                                viewBox="0 0 20 20"
-                              >
-                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                              </svg>
-                            ))}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </section>
-        </main>
-      </div>
-    </div>
+    <DashboardClient
+      userType={userType}
+      userName={user.name}
+      dashboardData={dashboardData}
+    />
   );
 }

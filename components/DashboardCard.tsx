@@ -23,15 +23,23 @@ export default function DashboardCard({
 
   return (
     <div
-      className={`${colorClasses[color]} text-white p-6 rounded-xl shadow-lg cursor-pointer transition-colors`}
+      className={`${colorClasses[color]} text-white p-3 sm:p-4 lg:p-6 rounded-lg sm:rounded-xl shadow-lg cursor-pointer transition-colors`}
       onClick={onClick}
     >
       <div className="flex items-center justify-between">
-        <div>
-          <p className="text-white/80 text-sm font-medium">{title}</p>
-          <p className="text-2xl font-bold">{value}</p>
+        <div className="min-w-0 flex-1">
+          <p className="text-white/80 text-xs sm:text-sm font-medium truncate">
+            {title}
+          </p>
+          <p className="text-base sm:text-lg lg:text-2xl font-bold truncate">
+            {value}
+          </p>
         </div>
-        {icon && <div className="text-white/80">{icon}</div>}
+        {icon && (
+          <div className="text-white/80 flex-shrink-0 ml-2 scale-75 sm:scale-100">
+            {icon}
+          </div>
+        )}
       </div>
     </div>
   );

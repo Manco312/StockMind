@@ -36,17 +36,17 @@ export default function Header({ userType, userName }: HeaderProps) {
   };
 
   return (
-    <header className="bg-gray-100 border-b border-gray-200 px-6 py-4">
+    <header className="bg-gray-100 border-b border-gray-200 px-3 sm:px-6 py-3 sm:py-4">
       <div className="flex items-center justify-between">
         {/* Left side */}
-        <div className="flex items-center space-x-6">
-          <h1 className="text-lg font-semibold text-gray-800">
+        <div className="flex items-center space-x-3 sm:space-x-6">
+          <h1 className="text-sm sm:text-lg font-semibold text-gray-800 truncate">
             {getHeaderTitle()}
           </h1>
         </div>
 
         {/* Center - Search */}
-        <div className="flex-1 max-w-md mx-8">
+        <div className="flex-1 max-w-md mx-2 sm:mx-8 hidden sm:block">
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <svg

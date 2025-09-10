@@ -14,7 +14,7 @@ export default function RoleSelector({
       <button
         type="button"
         onClick={() => onUserTypeChange("distributor")}
-        className={`flex-1 py-3 px-3 text-sm font-semibold transition-colors ${
+        className={`flex-1 py-2 sm:py-3 px-2 sm:px-3 text-xs sm:text-sm font-semibold transition-colors ${
           userType === "distributor"
             ? "bg-blue-400 text-white"
             : "bg-white text-gray-700 hover:bg-gray-50"
@@ -25,7 +25,7 @@ export default function RoleSelector({
       <button
         type="button"
         onClick={() => onUserTypeChange("store")}
-        className={`flex-1 py-3 px-3 text-sm font-semibold transition-colors ${
+        className={`flex-1 py-2 sm:py-3 px-2 sm:px-3 text-xs sm:text-sm font-semibold transition-colors ${
           userType === "store"
             ? "bg-blue-400 text-white"
             : "bg-white text-gray-700 hover:bg-gray-50"

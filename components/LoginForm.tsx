@@ -34,13 +34,15 @@ export default function LoginForm({ errorMessage }: LoginFormProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
+    <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
       {errorMessage && (
-        <p className="mb-4 text-red-500 font-medium">{errorMessage}</p>
+        <p className="mb-3 sm:mb-4 text-red-500 font-medium text-sm sm:text-base">
+          {errorMessage}
+        </p>
       )}
 
       <div>
-        <label className="block text-gray-700 font-semibold mb-2">
+        <label className="block text-gray-700 font-semibold mb-2 text-sm sm:text-base">
           Usuario
         </label>
         <input
@@ -48,13 +50,13 @@ export default function LoginForm({ errorMessage }: LoginFormProps) {
           placeholder="Ingresa tu usuario"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="w-full rounded-lg border-2 border-gray-200 p-4 text-gray-900 bg-white focus:border-blue-500 focus:outline-none transition-colors"
+          className="w-full rounded-lg border-2 border-gray-200 p-3 sm:p-4 text-gray-900 bg-white focus:border-blue-500 focus:outline-none transition-colors text-sm sm:text-base"
           required
         />
       </div>
 
       <div>
-        <label className="block text-gray-700 font-semibold mb-2">
+        <label className="block text-gray-700 font-semibold mb-2 text-sm sm:text-base">
           Contraseña
         </label>
         <input
@@ -62,7 +64,7 @@ export default function LoginForm({ errorMessage }: LoginFormProps) {
           placeholder="Ingresa tu contraseña"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="w-full rounded-lg border-2 border-gray-200 p-4 text-gray-900 bg-white focus:border-blue-500 focus:outline-none transition-colors"
+          className="w-full rounded-lg border-2 border-gray-200 p-3 sm:p-4 text-gray-900 bg-white focus:border-blue-500 focus:outline-none transition-colors text-sm sm:text-base"
           required
         />
       </div>
