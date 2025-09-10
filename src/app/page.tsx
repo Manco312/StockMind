@@ -1,72 +1,51 @@
-"use client";
-
-import { Button } from "@/components/Button";
-import { Card } from "@/components/Card";
-import Image from 'next/image';
-import { useRouter } from "next/navigation";
+import LandingHeader from "@/components/LandingHeader";
+import LandingIllustration from "@/components/LandingIllustration";
+import FeatureList from "@/components/FeatureList";
+import LandingCTA from "@/components/LandingCTA";
 
 export default function LandingPage() {
-  const router = useRouter();
-
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
-      <div className="w-full max-w-6xl grid lg:grid-cols-2 gap-8 items-center">
-        {/* Left side - Illustration Card */}
-        <Card className="bg-slate-700 p-8 rounded-3xl shadow-xl">
-          <Image src="/landing/inventario.png" alt="inventario" width={600} height={300} className="mx-auto"/>
-        </Card>
-
-        {/* Right side - Content */}
-        <div className="space-y-8">
-          {/* Logo and branding */}
-          <div className="flex items-center space-x-4">
-            <Image src="/landing/logo.png" alt="Logo" width={400} height={400} />
+    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-2 sm:p-4">
+      <div className="w-full max-w-7xl bg-white rounded-2xl sm:rounded-3xl shadow-xl overflow-hidden">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 min-h-[500px] sm:min-h-[600px]">
+          {/* Left side - Illustration (Hidden on mobile, shown on tablet and desktop) */}
+          <div className="hidden md:flex bg-slate-700 rounded-l-2xl sm:rounded-l-3xl items-center justify-center p-4 sm:p-6 lg:p-8">
+            <div className="text-center w-full">
+              <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-lg max-w-sm mx-auto">
+                <LandingIllustration />
+              </div>
+            </div>
           </div>
 
-          {/* Main content */}
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-3xl font-bold text-slate-700 mb-4 text-balance">
-                Transforma tu gestión de inventario con inteligencia artificial
-              </h2>
-              <p className="text-slate-600 text-lg leading-relaxed">
-                Optimiza tu negocio con análisis predictivos, control automatizado y decisiones basadas en datos.
-                StockMind te ayuda a mantener el equilibrio perfecto en tu inventario.
-              </p>
-            </div>
+          {/* Right side - Content */}
+          <div className="p-4 sm:p-6 md:p-8 lg:p-12 flex flex-col justify-center">
+            <div className="space-y-4 sm:space-y-6">
+              {/* Logo and tagline */}
+              <div className="mb-4 sm:mb-6">
+                <LandingHeader />
+              </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="flex items-center space-x-3">
-                <div className="w-2 h-2 bg-teal-500 rounded-full"></div>
-                <span className="text-slate-600">Control en tiempo real</span>
+              <div>
+                <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-800 mb-3 sm:mb-4 leading-tight">
+                  Transforma tu gestión de inventario con inteligencia
+                  artificial
+                </h1>
+                <p className="text-gray-600 text-base sm:text-lg leading-relaxed">
+                  Optimiza tu negocio con análisis predictivos, control
+                  automatizado y decisiones basadas en datos. StockMind te ayuda
+                  a mantener el equilibrio perfecto en tu inventario.
+                </p>
               </div>
-              <div className="flex items-center space-x-3">
-                <div className="w-2 h-2 bg-teal-500 rounded-full"></div>
-                <span className="text-slate-600">Análisis predictivo</span>
-              </div>
-              <div className="flex items-center space-x-3">
-                <div className="w-2 h-2 bg-teal-500 rounded-full"></div>
-                <span className="text-slate-600">Reportes inteligentes</span>
-              </div>
-              <div className="flex items-center space-x-3">
-                <div className="w-2 h-2 bg-teal-500 rounded-full"></div>
-                <span className="text-slate-600">Decisiones automatizadas</span>
-              </div>
-            </div>
 
-            {/* CTA Button */}
-            <div className="pt-4">
-              <Button
-                size="lg"
-                onClick={() => router.push("/accounting/login")}
-                className="bg-blue-500 hover:bg-blue-600 text-white px-8 py-3 text-lg rounded-xl font-medium shadow-lg hover:shadow-xl transition-all duration-200"
-              >
-                Entrar
-              </Button>
+              <FeatureList />
+
+              <div className="pt-2 sm:pt-4">
+                <LandingCTA />
+              </div>
             </div>
           </div>
         </div>
       </div>
     </div>
-  )
+  );
 }
