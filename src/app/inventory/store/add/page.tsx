@@ -1,24 +1,56 @@
 import { prisma } from "@/src/lib/prisma";
 import { auth } from "@/src/auth";
-import AddProductForm from "@/components/AddProductForm";
+import { redirect } from "next/navigation";
+import AddProductClient from "./AddProductClient";
+
+type UserType = "distributor" | "salesperson" | "inventory_manager";
 
 export default async function AddProductPage() {
   const session = await auth();
-  if (!session?.user?.email) return <p className="p-4 text-red-500">No autorizado</p>;
+  if (!session?.user?.email) {
+    redirect("/accounting/login");
+  }
 
-  const user = await prisma.user.findUnique({ where: { email: session.user.email } });
-  if (!user) return <p className="p-4 text-red-500">Usuario no encontrado</p>;
+  const user = await prisma.user.findUnique({
+    where: { email: session.user.email },
+    include: {
+      inventoryManager: true,
+      salesperson: true,
+    },
+  });
+
+  if (!user) {
+    redirect("/accounting/login");
+  }
+
+  let userType: UserType = "inventory_manager";
+  if (user.inventoryManager) {
+    userType = "inventory_manager";
+  } else if (user.salesperson) {
+    userType = "salesperson";
+  } else {
+    userType = "distributor";
+  }
 
   const manager = await prisma.inventoryManager.findUnique({
     where: { userId: user.id },
     include: { store: { include: { inventory: true } } },
   });
-  if (!manager) return <p className="p-4 text-red-500">No eres un Inventory Manager</p>;
+
+  if (!manager) {
+    redirect("/accounting/login");
+  }
 
   const distributorProducts = await prisma.product.findMany({
     where: { inventory: { type: "Distributor" }, available: true },
-    select: { id: true, title: true, price: true },
+    select: { id: true, title: true, price: true, description: true },
   });
 
-  return <AddProductForm products={distributorProducts} />;
+  return (
+    <AddProductClient
+      userType={userType}
+      userName={user.name}
+      products={distributorProducts}
+    />
+  );
 }

@@ -5,7 +5,11 @@ import bcrypt from "bcryptjs";
 
 export const authConfig = {
   pages: {
-    signIn: "/cuentas/login",
+    signIn: "/accounting/login",
+  },
+  session: {
+    strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   providers: [
     Credentials({
@@ -35,9 +39,10 @@ export const authConfig = {
   callbacks: {
     authorized({ auth, request: { nextUrl } }) {
       const isLoggedIn = !!auth?.user;
+      const isOnDashboard = nextUrl.pathname.startsWith("/dashboard");
       const isOnInventario = nextUrl.pathname.startsWith("/inventario");
 
-      if (isOnInventario && !isLoggedIn) return false;
+      if ((isOnDashboard || isOnInventario) && !isLoggedIn) return false;
       return true;
     },
     async jwt({ token, user }) {

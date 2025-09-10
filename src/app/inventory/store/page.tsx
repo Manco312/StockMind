@@ -1,61 +1,56 @@
-// app/inventario/page.tsx
 import { prisma } from "@/src/lib/prisma";
 import { auth } from "@/src/auth";
-import { ClientButton } from "@/components/ClientButton";
-import { Card } from "@/components/Card";
+import { redirect } from "next/navigation";
+import InventoryStoreClient from "./InventoryStoreClient";
 
-export default async function InventoryPage() {
+type UserType = "distributor" | "salesperson" | "inventory_manager";
+
+export default async function InventoryStorePage() {
   const session = await auth();
-  if (!session?.user?.email) return <p className="p-4 text-red-500">No autorizado</p>;
+  if (!session?.user?.email) {
+    redirect("/accounting/login");
+  }
 
-  const user = await prisma.user.findUnique({ where: { email: session.user.email } });
-  if (!user) return <p className="p-4 text-red-500">Usuario no encontrado</p>;
+  const user = await prisma.user.findUnique({
+    where: { email: session.user.email },
+    include: {
+      inventoryManager: true,
+      salesperson: true,
+    },
+  });
+
+  if (!user) {
+    redirect("/accounting/login");
+  }
+
+  let userType: UserType = "inventory_manager";
+  if (user.inventoryManager) {
+    userType = "inventory_manager";
+  } else if (user.salesperson) {
+    userType = "salesperson";
+  } else {
+    userType = "distributor";
+  }
 
   const manager = await prisma.inventoryManager.findUnique({
     where: { userId: user.id },
-    include: { store: { include: { inventory: { include: { offeredProducts: true } } } } },
+    include: {
+      store: { include: { inventory: { include: { offeredProducts: true } } } },
+    },
   });
-  if (!manager) return <p className="p-4 text-red-500">No eres un Inventory Manager</p>;
+
+  if (!manager) {
+    redirect("/accounting/login");
+  }
 
   const products = manager.store?.inventory?.offeredProducts || [];
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8 flex flex-col items-center">
-      <h1 className="text-5xl font-extrabold text-gray-800 mb-10 text-center">
-        Inventario de {manager.store?.name}
-      </h1>
-
-      {products.length === 0 ? (
-        <p className="text-gray-700 bg-red-100 p-6 rounded-lg text-center w-full max-w-3xl shadow">
-          No hay productos disponibles en tu tienda.
-        </p>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 w-full max-w-6xl">
-          {products.map((p) => (
-            <Card
-              key={p.id}
-              className="p-6 bg-white shadow-md hover:shadow-xl transition-all rounded-2xl flex flex-col justify-between"
-            >
-              <div>
-                <h2 className="font-bold text-2xl text-gray-900 mb-3">{p.title}</h2>
-                <p className="text-gray-700 mb-3">{p.description}</p>
-                <p className="font-semibold text-indigo-600 text-lg">Precio: ${p.price}</p>
-              </div>
-              <p
-                className={`mt-4 font-medium ${
-                  p.available ? "text-green-600" : "text-red-600"
-                }`}
-              >
-                {p.available ? "Disponible" : "No disponible"}
-              </p>
-            </Card>
-          ))}
-        </div>
-      )}
-
-      <div className="mt-10">
-        <ClientButton />
-      </div>
-    </div>
+    <InventoryStoreClient
+      userType={userType}
+      userName={user.name}
+      storeName={manager.store?.name || "Mi Tienda"}
+      products={products}
+    />
   );
 }
