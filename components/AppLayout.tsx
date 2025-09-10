@@ -24,7 +24,7 @@ export default function AppLayout({
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col lg:flex-row">
+    <div className="h-screen bg-gray-100 flex flex-col lg:flex-row overflow-hidden">
       {/* Mobile menu button */}
       <button
         onClick={() => setIsSidebarOpen(!isSidebarOpen)}
@@ -64,12 +64,12 @@ export default function AppLayout({
       />
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 min-h-0">
         {/* Header */}
         <Header userType={userType} userName={userName} />
 
         {/* Page Content */}
-        <main className="flex-1 p-3 sm:p-4 lg:p-6 overflow-x-auto pt-14 lg:pt-6">
+        <main className="flex-1 p-3 sm:p-4 lg:p-6 overflow-y-auto overflow-x-hidden pt-14 lg:pt-6 min-h-0">
           {title && (
             <div className="mb-6 sm:mb-8">
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">
@@ -77,7 +77,7 @@ export default function AppLayout({
               </h1>
             </div>
           )}
-          {children}
+          <div className="h-full overflow-y-auto">{children}</div>
         </main>
       </div>
     </div>

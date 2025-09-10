@@ -7,14 +7,22 @@ import { signOut } from "next-auth/react";
 interface SidebarProps {
   userType: "distributor" | "salesperson" | "inventory_manager";
   activeSection?: string;
+  isOpen?: boolean;
+  setIsOpen?: (isOpen: boolean) => void;
 }
 
 export default function Sidebar({
   userType,
   activeSection = "inicio",
+  isOpen: externalIsOpen,
+  setIsOpen: externalSetIsOpen,
 }: SidebarProps) {
   const router = useRouter();
-  const [isOpen, setIsOpen] = useState(false);
+  const [internalIsOpen, setInternalIsOpen] = useState(false);
+
+  // Use external state if provided, otherwise use internal state
+  const isOpen = externalIsOpen !== undefined ? externalIsOpen : internalIsOpen;
+  const setIsOpen = externalSetIsOpen || setInternalIsOpen;
 
   const getNavigationItems = () => {
     switch (userType) {
@@ -110,7 +118,7 @@ export default function Sidebar({
       <div
         className={`
         fixed lg:static inset-y-0 left-0 z-50
-        w-64 bg-slate-800 text-white h-screen flex flex-col
+        w-64 bg-slate-800 text-white h-full flex flex-col
         transform transition-transform duration-300 ease-in-out
         ${isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
       `}
@@ -121,7 +129,7 @@ export default function Sidebar({
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 p-4">
+        <nav className="flex-1 p-4 overflow-y-auto">
           <ul className="space-y-2">
             {getNavigationItems().map((item) => (
               <li key={item.id}>
@@ -133,8 +141,8 @@ export default function Sidebar({
                       : "text-slate-300 hover:bg-slate-700 hover:text-white"
                   }`}
                 >
-                  <span className="text-lg">{item.icon}</span>
-                  <span>{item.label}</span>
+                  <span className="text-lg flex-shrink-0">{item.icon}</span>
+                  <span className="truncate">{item.label}</span>
                 </button>
               </li>
             ))}
@@ -142,11 +150,11 @@ export default function Sidebar({
         </nav>
 
         {/* Action Buttons */}
-        <div className="p-4 border-t border-slate-700 space-y-3">
+        <div className="p-4 border-t border-slate-700 space-y-3 flex-shrink-0">
           {userType === "inventory_manager" && (
             <button
               onClick={() => router.push("/inventory/store/add")}
-              className="w-full bg-green-600 hover:bg-green-700 text-white py-3 px-4 rounded-lg font-medium transition-colors"
+              className="w-full bg-green-600 hover:bg-green-700 text-white py-3 px-4 rounded-lg font-medium transition-colors truncate"
             >
               Agregar Productos
             </button>
@@ -154,14 +162,14 @@ export default function Sidebar({
           {(userType === "salesperson" || userType === "distributor") && (
             <button
               onClick={handleAddStore}
-              className="w-full bg-red-600 hover:bg-red-700 text-white py-3 px-4 rounded-lg font-medium transition-colors"
+              className="w-full bg-red-600 hover:bg-red-700 text-white py-3 px-4 rounded-lg font-medium transition-colors truncate"
             >
               Añadir Tienda
             </button>
           )}
           <button
             onClick={handleLogout}
-            className="w-full text-slate-300 hover:text-white py-2 transition-colors"
+            className="w-full text-slate-300 hover:text-white py-2 transition-colors truncate"
           >
             Cerrar Sesión
           </button>

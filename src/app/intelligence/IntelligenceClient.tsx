@@ -33,68 +33,149 @@ export default function IntelligenceClient({
   const [selectedPeriod, setSelectedPeriod] = useState("30d");
   const [selectedCategory, setSelectedCategory] = useState("all");
 
+  // Función para filtrar datos basándose en los filtros seleccionados
+  const getFilteredData = () => {
+    if (!analyticsData) return null;
+
+    // Crear una copia de los datos para no modificar el original
+    const filteredData = { ...analyticsData };
+
+    // Filtrar por período (usando ID como proxy de tiempo)
+    if (selectedPeriod !== "30d") {
+      // Para períodos diferentes, ajustar el porcentaje de datos recientes
+      let recentPercentage = 0.6; // 60% por defecto (30 días)
+
+      if (selectedPeriod === "7d") {
+        recentPercentage = 0.8; // 80% para 7 días
+      } else if (selectedPeriod === "90d") {
+        recentPercentage = 0.4; // 40% para 90 días
+      }
+
+      // Recalcular datos basándose en el nuevo período
+      if (userType === "inventory_manager" && filteredData.salesByProduct) {
+        // Recalcular productos de alta/baja rotación
+        const allProducts = Object.values(filteredData.salesByProduct);
+        const sortedProducts = allProducts.sort(
+          (a, b) => b.totalQuantity - a.totalQuantity
+        );
+
+        const recentCount = Math.ceil(sortedProducts.length * recentPercentage);
+        filteredData.highRotationProducts = sortedProducts.slice(
+          0,
+          recentCount
+        );
+        filteredData.lowRotationProducts = sortedProducts.slice(-recentCount);
+      }
+    }
+
+    // Filtrar por categoría
+    if (selectedCategory !== "all") {
+      // Mapear categorías a palabras clave
+      const categoryKeywords = {
+        food: ["alimento", "comida", "snack", "cereal", "galleta"],
+        cleaning: [
+          "limpieza",
+          "jabón",
+          "detergente",
+          "limpiador",
+          "desinfectante",
+        ],
+        beverages: ["bebida", "jugo", "agua", "refresco", "gaseosa"],
+      };
+
+      const keywords =
+        categoryKeywords[selectedCategory as keyof typeof categoryKeywords] ||
+        [];
+
+      if (filteredData.salesByProduct) {
+        const filteredProducts = Object.fromEntries(
+          Object.entries(filteredData.salesByProduct).filter(
+            ([_, product]: [string, any]) => {
+              const productTitle = product.product.title.toLowerCase();
+              return keywords.some((keyword) => productTitle.includes(keyword));
+            }
+          )
+        );
+
+        filteredData.salesByProduct = filteredProducts;
+
+        // Recalcular productos de alta/baja rotación con los filtrados
+        const allProducts = Object.values(filteredProducts);
+        const sortedProducts = allProducts.sort(
+          (a, b) => b.totalQuantity - a.totalQuantity
+        );
+
+        filteredData.highRotationProducts = sortedProducts.slice(0, 5);
+        filteredData.lowRotationProducts = sortedProducts.slice(-5);
+      }
+    }
+
+    return filteredData;
+  };
+
   // Función para generar insights basados en los datos
   const generateInsights = () => {
-    if (!analyticsData) return [];
+    const filteredData = getFilteredData();
+    if (!filteredData) return [];
 
     const insights = [];
 
     if (userType === "inventory_manager") {
       // Insights para Inventory Manager
-      if (analyticsData.salesTrend && analyticsData.salesTrend > 0) {
+      if (filteredData.salesTrend && filteredData.salesTrend > 0) {
         insights.push({
           type: "success",
           title: "Tendencia Positiva",
-          message: `Las ventas han aumentado un ${analyticsData.salesTrend.toFixed(
+          message: `Las ventas han aumentado un ${filteredData.salesTrend.toFixed(
             1
-          )}% en los últimos 30 días.`,
+          )}% en el período seleccionado.`,
         });
-      } else if (analyticsData.salesTrend && analyticsData.salesTrend < 0) {
+      } else if (filteredData.salesTrend && filteredData.salesTrend < 0) {
         insights.push({
           type: "warning",
           title: "Tendencia Negativa",
           message: `Las ventas han disminuido un ${Math.abs(
-            analyticsData.salesTrend
-          ).toFixed(1)}% en los últimos 30 días.`,
+            filteredData.salesTrend
+          ).toFixed(1)}% en el período seleccionado.`,
         });
       }
 
       if (
-        analyticsData.outOfStockProducts &&
-        analyticsData.outOfStockProducts.length > 0
+        filteredData.outOfStockProducts &&
+        filteredData.outOfStockProducts.length > 0
       ) {
         insights.push({
           type: "error",
           title: "Productos Agotados",
-          message: `Tienes ${analyticsData.outOfStockProducts.length} productos sin stock. Considera reabastecer.`,
+          message: `Tienes ${filteredData.outOfStockProducts.length} productos sin stock. Considera reabastecer.`,
         });
       }
 
       if (
-        analyticsData.lowRotationProducts &&
-        analyticsData.lowRotationProducts.length > 0
+        filteredData.lowRotationProducts &&
+        filteredData.lowRotationProducts.length > 0
       ) {
         insights.push({
           type: "info",
           title: "Productos de Baja Rotación",
-          message: `Identificamos ${analyticsData.lowRotationProducts.length} productos con baja rotación. Considera promociones.`,
+          message: `Identificamos ${filteredData.lowRotationProducts.length} productos con baja rotación. Considera promociones.`,
         });
       }
     } else if (userType === "salesperson") {
       // Insights para Salesperson
-      if (analyticsData.activeStores && analyticsData.activeStores > 0) {
+      if (filteredData.activeStores && filteredData.activeStores > 0) {
         insights.push({
           type: "success",
           title: "Tiendas Activas",
-          message: `Tienes ${analyticsData.activeStores} tiendas activas en tu territorio.`,
+          message: `Tienes ${filteredData.activeStores} tiendas activas en tu territorio.`,
         });
       }
 
-      if (analyticsData.totalSales && analyticsData.totalSales > 0) {
+      if (filteredData.totalSales && filteredData.totalSales > 0) {
         insights.push({
           type: "info",
           title: "Rendimiento de Ventas",
-          message: `Has generado $${analyticsData.totalSales.toLocaleString()} en ventas este mes.`,
+          message: `Has generado $${filteredData.totalSales.toLocaleString()} en ventas en el período seleccionado.`,
         });
       }
     }
@@ -103,6 +184,7 @@ export default function IntelligenceClient({
   };
 
   const insights = generateInsights();
+  const filteredData = getFilteredData();
 
   return (
     <AppLayout
@@ -111,71 +193,138 @@ export default function IntelligenceClient({
       activeSection="intelligence"
       title="Inteligencia de Negocios"
     >
-      <div className="space-y-6">
+      <div className="space-y-6 w-full max-w-full overflow-hidden">
         {/* Filtros */}
-        <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 border border-gray-100">
-          <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-800">
-              Filtros de Análisis
-            </h2>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <select
-                value={selectedPeriod}
-                onChange={(e) => setSelectedPeriod(e.target.value)}
-                className="px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                title="Seleccionar período de análisis"
-                aria-label="Seleccionar período de análisis"
-              >
-                <option value="7d">Últimos 7 días</option>
-                <option value="30d">Últimos 30 días</option>
-                <option value="90d">Últimos 90 días</option>
-              </select>
-              <select
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                className="px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                title="Seleccionar categoría de producto"
-                aria-label="Seleccionar categoría de producto"
-              >
-                <option value="all">Todas las categorías</option>
-                <option value="food">Alimentos</option>
-                <option value="cleaning">Limpieza</option>
-                <option value="beverages">Bebidas</option>
-              </select>
+        <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 border border-gray-100 w-full max-w-full overflow-hidden">
+          <div className="flex flex-col sm:flex-row gap-4 items-center justify-between w-full">
+            <div className="min-w-0 flex-shrink-0">
+              <h2 className="text-lg font-semibold text-gray-800">
+                Filtros de Análisis
+              </h2>
+              {(selectedPeriod !== "30d" || selectedCategory !== "all") && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {selectedPeriod !== "30d" && (
+                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                      {selectedPeriod === "7d"
+                        ? "Últimos 7 días"
+                        : "Últimos 90 días"}
+                      <button
+                        onClick={() => setSelectedPeriod("30d")}
+                        className="ml-1 text-blue-600 hover:text-blue-800"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  )}
+                  {selectedCategory !== "all" && (
+                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                      {selectedCategory === "food"
+                        ? "Alimentos"
+                        : selectedCategory === "cleaning"
+                        ? "Limpieza"
+                        : "Bebidas"}
+                      <button
+                        onClick={() => setSelectedCategory("all")}
+                        className="ml-1 text-green-600 hover:text-green-800"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+            <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto min-w-0">
+              <div className="relative">
+                <select
+                  value={selectedPeriod}
+                  onChange={(e) => setSelectedPeriod(e.target.value)}
+                  className="appearance-none bg-white px-4 py-3 pr-10 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-full sm:w-auto min-w-0 text-gray-700 font-medium shadow-sm hover:border-gray-300 transition-colors cursor-pointer"
+                  title="Seleccionar período de análisis"
+                  aria-label="Seleccionar período de análisis"
+                >
+                  <option value="7d">Últimos 7 días</option>
+                  <option value="30d">Últimos 30 días</option>
+                  <option value="90d">Últimos 90 días</option>
+                </select>
+                <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                  <svg
+                    className="w-5 h-5 text-gray-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </div>
+              </div>
+              <div className="relative">
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  className="appearance-none bg-white px-4 py-3 pr-10 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-full sm:w-auto min-w-0 text-gray-700 font-medium shadow-sm hover:border-gray-300 transition-colors cursor-pointer"
+                  title="Seleccionar categoría de producto"
+                  aria-label="Seleccionar categoría de producto"
+                >
+                  <option value="all">Todas las categorías</option>
+                  <option value="food">Alimentos</option>
+                  <option value="cleaning">Limpieza</option>
+                  <option value="beverages">Bebidas</option>
+                </select>
+                <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                  <svg
+                    className="w-5 h-5 text-gray-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
         {/* Analytics Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 w-full max-w-full overflow-hidden">
           {userType === "inventory_manager" ? (
             <>
-              <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl shadow-lg p-4 sm:p-6 border border-green-200">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-sm font-semibold text-green-700 mb-2">
+              <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl shadow-lg p-4 sm:p-6 border border-green-200 w-full max-w-full overflow-hidden">
+                <div className="flex items-center justify-between w-full">
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-sm font-semibold text-green-700 mb-2 truncate">
                       Ventas del Mes
                     </h3>
-                    <p className="text-2xl font-bold text-green-900">
-                      ${analyticsData?.totalSales?.toLocaleString() || "0"}
+                    <p className="text-2xl font-bold text-green-900 truncate">
+                      ${filteredData?.totalSales?.toLocaleString() || "0"}
                     </p>
                     <p
-                      className={`text-sm ${
-                        analyticsData?.salesTrend &&
-                        analyticsData.salesTrend > 0
+                      className={`text-sm truncate ${
+                        filteredData?.salesTrend && filteredData.salesTrend > 0
                           ? "text-green-600"
                           : "text-red-600"
                       }`}
                     >
-                      {analyticsData?.salesTrend
+                      {filteredData?.salesTrend
                         ? `${
-                            analyticsData.salesTrend > 0 ? "+" : ""
-                          }${analyticsData.salesTrend.toFixed(1)}%`
+                            filteredData.salesTrend > 0 ? "+" : ""
+                          }${filteredData.salesTrend.toFixed(1)}%`
                         : "Sin datos"}{" "}
-                      vs mes anterior
+                      vs período anterior
                     </p>
                   </div>
-                  <div className="w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center">
+                  <div className="w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center flex-shrink-0">
                     <svg
                       className="w-6 h-6 text-white"
                       fill="none"
@@ -193,18 +342,20 @@ export default function IntelligenceClient({
                 </div>
               </div>
 
-              <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl shadow-lg p-4 sm:p-6 border border-blue-200">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-sm font-semibold text-blue-700 mb-2">
+              <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl shadow-lg p-4 sm:p-6 border border-blue-200 w-full max-w-full overflow-hidden">
+                <div className="flex items-center justify-between w-full">
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-sm font-semibold text-blue-700 mb-2 truncate">
                       Pedidos Recibidos
                     </h3>
-                    <p className="text-2xl font-bold text-blue-900">
-                      {analyticsData?.totalOrders || 0}
+                    <p className="text-2xl font-bold text-blue-900 truncate">
+                      {filteredData?.totalOrders || 0}
                     </p>
-                    <p className="text-sm text-blue-600">este mes</p>
+                    <p className="text-sm text-blue-600 truncate">
+                      período seleccionado
+                    </p>
                   </div>
-                  <div className="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center">
+                  <div className="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center flex-shrink-0">
                     <svg
                       className="w-6 h-6 text-white"
                       fill="none"
@@ -222,18 +373,20 @@ export default function IntelligenceClient({
                 </div>
               </div>
 
-              <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl shadow-lg p-4 sm:p-6 border border-purple-200">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-sm font-semibold text-purple-700 mb-2">
+              <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl shadow-lg p-4 sm:p-6 border border-purple-200 w-full max-w-full overflow-hidden">
+                <div className="flex items-center justify-between w-full">
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-sm font-semibold text-purple-700 mb-2 truncate">
                       Valor del Inventario
                     </h3>
-                    <p className="text-2xl font-bold text-purple-900">
-                      ${analyticsData?.inventoryValue?.toLocaleString() || "0"}
+                    <p className="text-2xl font-bold text-purple-900 truncate">
+                      ${filteredData?.inventoryValue?.toLocaleString() || "0"}
                     </p>
-                    <p className="text-sm text-purple-600">stock actual</p>
+                    <p className="text-sm text-purple-600 truncate">
+                      stock actual
+                    </p>
                   </div>
-                  <div className="w-12 h-12 bg-purple-500 rounded-xl flex items-center justify-center">
+                  <div className="w-12 h-12 bg-purple-500 rounded-xl flex items-center justify-center flex-shrink-0">
                     <svg
                       className="w-6 h-6 text-white"
                       fill="none"
@@ -251,20 +404,20 @@ export default function IntelligenceClient({
                 </div>
               </div>
 
-              <div className="bg-gradient-to-br from-red-50 to-red-100 rounded-xl shadow-lg p-4 sm:p-6 border border-red-200">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-sm font-semibold text-red-700 mb-2">
+              <div className="bg-gradient-to-br from-red-50 to-red-100 rounded-xl shadow-lg p-4 sm:p-6 border border-red-200 w-full max-w-full overflow-hidden">
+                <div className="flex items-center justify-between w-full">
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-sm font-semibold text-red-700 mb-2 truncate">
                       Productos Agotados
                     </h3>
-                    <p className="text-2xl font-bold text-red-900">
-                      {analyticsData?.outOfStockProducts?.length || 0}
+                    <p className="text-2xl font-bold text-red-900 truncate">
+                      {filteredData?.outOfStockProducts?.length || 0}
                     </p>
-                    <p className="text-sm text-red-600">
+                    <p className="text-sm text-red-600 truncate">
                       requieren reabastecimiento
                     </p>
                   </div>
-                  <div className="w-12 h-12 bg-red-500 rounded-xl flex items-center justify-center">
+                  <div className="w-12 h-12 bg-red-500 rounded-xl flex items-center justify-center flex-shrink-0">
                     <svg
                       className="w-6 h-6 text-white"
                       fill="none"
@@ -285,15 +438,17 @@ export default function IntelligenceClient({
           ) : (
             <>
               <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl shadow-lg p-4 sm:p-6 border border-green-200">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-sm font-semibold text-green-700 mb-2">
-                      Ventas del Mes
+                <div className="flex items-center justify-between w-full">
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-sm font-semibold text-green-700 mb-2 truncate">
+                      Ventas del Período
                     </h3>
-                    <p className="text-2xl font-bold text-green-900">
-                      ${analyticsData?.totalSales?.toLocaleString() || "0"}
+                    <p className="text-2xl font-bold text-green-900 truncate">
+                      ${filteredData?.totalSales?.toLocaleString() || "0"}
                     </p>
-                    <p className="text-sm text-green-600">total generado</p>
+                    <p className="text-sm text-green-600 truncate">
+                      período seleccionado
+                    </p>
                   </div>
                   <div className="w-12 h-12 bg-green-500 rounded-xl flex items-center justify-center">
                     <svg
@@ -313,18 +468,20 @@ export default function IntelligenceClient({
                 </div>
               </div>
 
-              <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl shadow-lg p-4 sm:p-6 border border-blue-200">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-sm font-semibold text-blue-700 mb-2">
+              <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl shadow-lg p-4 sm:p-6 border border-blue-200 w-full max-w-full overflow-hidden">
+                <div className="flex items-center justify-between w-full">
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-sm font-semibold text-blue-700 mb-2 truncate">
                       Pedidos Realizados
                     </h3>
-                    <p className="text-2xl font-bold text-blue-900">
-                      {analyticsData?.totalOrders || 0}
+                    <p className="text-2xl font-bold text-blue-900 truncate">
+                      {filteredData?.totalOrders || 0}
                     </p>
-                    <p className="text-sm text-blue-600">este mes</p>
+                    <p className="text-sm text-blue-600 truncate">
+                      período seleccionado
+                    </p>
                   </div>
-                  <div className="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center">
+                  <div className="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center flex-shrink-0">
                     <svg
                       className="w-6 h-6 text-white"
                       fill="none"
@@ -342,18 +499,18 @@ export default function IntelligenceClient({
                 </div>
               </div>
 
-              <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl shadow-lg p-4 sm:p-6 border border-purple-200">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-sm font-semibold text-purple-700 mb-2">
+              <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl shadow-lg p-4 sm:p-6 border border-purple-200 w-full max-w-full overflow-hidden">
+                <div className="flex items-center justify-between w-full">
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-sm font-semibold text-purple-700 mb-2 truncate">
                       Tiendas Activas
                     </h3>
-                    <p className="text-2xl font-bold text-purple-900">
+                    <p className="text-2xl font-bold text-purple-900 truncate">
                       {analyticsData?.activeStores || 0}
                     </p>
                     <p className="text-sm text-purple-600">en tu territorio</p>
                   </div>
-                  <div className="w-12 h-12 bg-purple-500 rounded-xl flex items-center justify-center">
+                  <div className="w-12 h-12 bg-purple-500 rounded-xl flex items-center justify-center flex-shrink-0">
                     <svg
                       className="w-6 h-6 text-white"
                       fill="none"
@@ -371,13 +528,13 @@ export default function IntelligenceClient({
                 </div>
               </div>
 
-              <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl shadow-lg p-4 sm:p-6 border border-orange-200">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-sm font-semibold text-orange-700 mb-2">
+              <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl shadow-lg p-4 sm:p-6 border border-orange-200 w-full max-w-full overflow-hidden">
+                <div className="flex items-center justify-between w-full">
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-sm font-semibold text-orange-700 mb-2 truncate">
                       Productos Únicos
                     </h3>
-                    <p className="text-2xl font-bold text-orange-900">
+                    <p className="text-2xl font-bold text-orange-900 truncate">
                       {analyticsData?.salesByStore
                         ? Object.values(analyticsData.salesByStore).reduce(
                             (sum: number, store: any) =>
@@ -386,9 +543,11 @@ export default function IntelligenceClient({
                           )
                         : 0}
                     </p>
-                    <p className="text-sm text-orange-600">vendidos este mes</p>
+                    <p className="text-sm text-orange-600 truncate">
+                      vendidos este mes
+                    </p>
                   </div>
-                  <div className="w-12 h-12 bg-orange-500 rounded-xl flex items-center justify-center">
+                  <div className="w-12 h-12 bg-orange-500 rounded-xl flex items-center justify-center flex-shrink-0">
                     <svg
                       className="w-6 h-6 text-white"
                       fill="none"
@@ -410,12 +569,12 @@ export default function IntelligenceClient({
         </div>
 
         {/* Análisis Detallados */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 w-full max-w-full overflow-hidden">
           {/* Productos con Alta Rotación */}
           {userType === "inventory_manager" &&
-            analyticsData?.highRotationProducts &&
-            analyticsData.highRotationProducts.length > 0 && (
-              <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 border border-gray-100">
+            filteredData?.highRotationProducts &&
+            filteredData.highRotationProducts.length > 0 && (
+              <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 border border-gray-100 w-full max-w-full overflow-hidden">
                 <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
                   <svg
                     className="w-5 h-5 text-green-600"
@@ -433,14 +592,14 @@ export default function IntelligenceClient({
                   Productos con Alta Rotación
                 </h3>
                 <div className="space-y-3">
-                  {analyticsData.highRotationProducts
+                  {filteredData.highRotationProducts
                     .slice(0, 5)
                     .map((item: any, index: number) => (
                       <div
                         key={index}
                         className="flex items-center justify-between p-3 bg-green-50 rounded-lg"
                       >
-                        <div>
+                        <div className="min-w-0 flex-1">
                           <p className="font-medium text-gray-900">
                             {item.product.title}
                           </p>
@@ -464,9 +623,9 @@ export default function IntelligenceClient({
 
           {/* Productos con Baja Rotación */}
           {userType === "inventory_manager" &&
-            analyticsData?.lowRotationProducts &&
-            analyticsData.lowRotationProducts.length > 0 && (
-              <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 border border-gray-100">
+            filteredData?.lowRotationProducts &&
+            filteredData.lowRotationProducts.length > 0 && (
+              <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 border border-gray-100 w-full max-w-full overflow-hidden">
                 <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
                   <svg
                     className="w-5 h-5 text-orange-600"
@@ -484,14 +643,14 @@ export default function IntelligenceClient({
                   Productos con Baja Rotación
                 </h3>
                 <div className="space-y-3">
-                  {analyticsData.lowRotationProducts
+                  {filteredData.lowRotationProducts
                     .slice(0, 5)
                     .map((item: any, index: number) => (
                       <div
                         key={index}
                         className="flex items-center justify-between p-3 bg-orange-50 rounded-lg"
                       >
-                        <div>
+                        <div className="min-w-0 flex-1">
                           <p className="font-medium text-gray-900">
                             {item.product.title}
                           </p>
@@ -514,7 +673,7 @@ export default function IntelligenceClient({
             )}
 
           {/* Análisis por Tienda (Salesperson) */}
-          {userType === "salesperson" && analyticsData?.salesByStore && (
+          {userType === "salesperson" && filteredData?.salesByStore && (
             <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 border border-gray-100 lg:col-span-2">
               <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
                 <svg
@@ -533,7 +692,7 @@ export default function IntelligenceClient({
                 Análisis por Tienda
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {Object.values(analyticsData.salesByStore).map(
+                {Object.values(filteredData.salesByStore).map(
                   (store: any, index: number) => (
                     <div key={index} className="p-4 bg-blue-50 rounded-lg">
                       <h4 className="font-semibold text-gray-900 mb-2">
@@ -572,7 +731,7 @@ export default function IntelligenceClient({
         </div>
 
         {/* Insights y Recomendaciones */}
-        <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 border border-gray-100">
+        <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 border border-gray-100 w-full max-w-full overflow-hidden">
           <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
             <svg
               className="w-5 h-5 text-purple-600"
@@ -594,7 +753,7 @@ export default function IntelligenceClient({
               insights.map((insight, index) => (
                 <div
                   key={index}
-                  className={`p-4 rounded-lg ${
+                  className={`p-4 rounded-lg w-full max-w-full overflow-hidden ${
                     insight.type === "success"
                       ? "bg-green-50 border border-green-200"
                       : insight.type === "warning"
@@ -604,7 +763,7 @@ export default function IntelligenceClient({
                       : "bg-blue-50 border border-blue-200"
                   }`}
                 >
-                  <div className="flex items-start gap-3">
+                  <div className="flex items-start gap-3 w-full">
                     <div
                       className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${
                         insight.type === "success"
@@ -653,9 +812,9 @@ export default function IntelligenceClient({
                         )}
                       </svg>
                     </div>
-                    <div>
+                    <div className="min-w-0 flex-1">
                       <h4
-                        className={`font-semibold ${
+                        className={`font-semibold truncate ${
                           insight.type === "success"
                             ? "text-green-800"
                             : insight.type === "warning"
@@ -668,7 +827,7 @@ export default function IntelligenceClient({
                         {insight.title}
                       </h4>
                       <p
-                        className={`text-sm ${
+                        className={`text-sm break-words ${
                           insight.type === "success"
                             ? "text-green-700"
                             : insight.type === "warning"
@@ -695,7 +854,7 @@ export default function IntelligenceClient({
         </div>
 
         {/* Historial de Reportes */}
-        <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 border border-gray-100">
+        <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 border border-gray-100 w-full max-w-full overflow-hidden">
           <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
             <svg
               className="w-5 h-5 text-indigo-600"
@@ -713,35 +872,35 @@ export default function IntelligenceClient({
             Historial de Reportes
           </h3>
           <div className="space-y-3">
-            <div className="p-4 bg-gray-50 rounded-lg">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="font-medium text-gray-900">
+            <div className="p-4 bg-gray-50 rounded-lg w-full max-w-full overflow-hidden">
+              <div className="flex items-center justify-between w-full">
+                <div className="min-w-0 flex-1">
+                  <h4 className="font-medium text-gray-900 truncate">
                     Reporte de Análisis Mensual
                   </h4>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-gray-600 truncate">
                     Generado el {new Date().toLocaleDateString()}
                   </p>
                 </div>
-                <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm">
+                <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm flex-shrink-0">
                   Descargar
                 </button>
               </div>
             </div>
-            <div className="p-4 bg-gray-50 rounded-lg">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="font-medium text-gray-900">
+            <div className="p-4 bg-gray-50 rounded-lg w-full max-w-full overflow-hidden">
+              <div className="flex items-center justify-between w-full">
+                <div className="min-w-0 flex-1">
+                  <h4 className="font-medium text-gray-900 truncate">
                     Análisis de Rotación de Productos
                   </h4>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-gray-600 truncate">
                     Generado el{" "}
                     {new Date(
                       Date.now() - 7 * 24 * 60 * 60 * 1000
                     ).toLocaleDateString()}
                   </p>
                 </div>
-                <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm">
+                <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm flex-shrink-0">
                   Descargar
                 </button>
               </div>
