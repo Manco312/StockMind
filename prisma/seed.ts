@@ -248,7 +248,22 @@ async function main() {
           expirationDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 días
           location: "Almacén Principal",
           productId: product.id,
-          inventoryId: distributorInventory.id,
+          inventoryId: storeInventory.id,
+        },
+      })
+    )
+  );
+
+  const batch30 = await Promise.all(
+    distributorProducts.slice(0, 30).map((product) =>
+      prisma.batch.create({
+        data: {
+          code: `BATCH30-${product.id}-${Date.now()}`,
+          quantity: Math.floor(Math.random() * 100) + 20,
+          expirationDate: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000), // 60 días
+          location: "Almacén Secundario",
+          productId: product.id,
+          inventoryId: storeInventory.id,
         },
       })
     )
