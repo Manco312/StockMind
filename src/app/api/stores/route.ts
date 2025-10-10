@@ -77,15 +77,31 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Todos los campos son obligatorios" }, { status: 400 })
   }
 
-  // Create the store
-  const store = await prisma.store.create({
-    data: {
-      name,
-      address,
-      neighborhood,
-      capital: Number.parseInt(capital),
-    },
+  const result = await prisma.$transaction(async (tx) => {
+    // Create the store
+    const store = await tx.store.create({
+      data: {
+        name,
+        address,
+        neighborhood,
+        capital: Number.parseInt(capital),
+      },
+    })
+
+    // Create inventory for the store
+    const inventory = await tx.inventory.create({
+      data: {
+        type: "store",
+        storeId: store.id,
+      },
+    })
+
+    return { store, inventory }
   })
 
-  return NextResponse.json({ success: true, store })
+  return NextResponse.json({
+    success: true,
+    store: result.store,
+    inventory: result.inventory,
+  })
 }
