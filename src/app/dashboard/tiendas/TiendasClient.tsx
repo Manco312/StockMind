@@ -83,7 +83,7 @@ export default function TiendasClient({ stores }: TiendasClientProps) {
                 </div>
               )}
 
-              <div className="mt-4">
+              <div className="mt-4 flex items-center justify-between">
                 <span
                   className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full ${
                     store.inventory ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600"
@@ -91,6 +91,13 @@ export default function TiendasClient({ stores }: TiendasClientProps) {
                 >
                   {store.inventory ? "Con Inventario" : "Sin Inventario"}
                 </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => router.push(`/dashboard/tiendas/${store.id}/pedidos`)}
+                >
+                  Ver Historial
+                </Button>
               </div>
             </Card>
           ))}
