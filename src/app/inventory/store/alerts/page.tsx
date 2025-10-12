@@ -23,6 +23,18 @@ const session = await auth();
     redirect("/accounting/login");
   }
 
+  // Obtener store id para traer las alertas en el cliente
+  const managerStore = await prisma.inventoryManager.findUnique({
+    where: { userId: user.id },
+    select: { storeId: true },
+  });
+
+  if (!managerStore) {
+    redirect("/accounting/login");
+  }
+
+  const { storeId } = managerStore;
+
   let userType: UserType = "inventory_manager";
   if (user.inventoryManager) {
     userType = "inventory_manager";
@@ -45,6 +57,7 @@ const session = await auth();
     <ShowAlertClient 
       userType={userType}
       userName={user.name}
+      storeId={storeId}
       />
   );
 }

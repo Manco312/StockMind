@@ -1,12 +1,11 @@
-import { PrismaClient } from "../src/generated/prisma";
+import { PrismaClient } from "../src/generated/prisma/index.js";
+
 import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
-// Los pedidos se crearán secuencialmente, usando el ID como proxy de tiempo
-
 async function main() {
-  console.log("🌱 Iniciando seed con datos realistas para analytics...");
+  console.log("🌱 Iniciando seed con stock mínimo y relaciones correctas...");
 
   // Limpiar datos existentes
   await prisma.order.deleteMany();
@@ -76,153 +75,44 @@ async function main() {
     data: { inventoryId: distributorInventory.id },
   });
 
-  // 4. Crear productos más realistas con diferentes categorías
+  // 4. Crear productos con stock mínimo aleatorio
   const realProducts = [
-    // Alimentos básicos (alta rotación)
-    {
-      title: "Arroz Diana 1kg",
-      description: "Arroz blanco de alta calidad",
-      category: "Alimentos",
-      price: 5000,
-    },
-    {
-      title: "Aceite Girasol 1L",
-      description: "Aceite vegetal puro para cocinar",
-      category: "Alimentos",
-      price: 8000,
-    },
-    {
-      title: "Azúcar Blanca 1kg",
-      description: "Azúcar refinada para repostería",
-      category: "Alimentos",
-      price: 3500,
-    },
-    {
-      title: "Huevos XL Docena",
-      description: "Huevos frescos tamaño XL",
-      category: "Alimentos",
-      price: 12000,
-    },
-    {
-      title: "Papa Pastusa 2kg",
-      description: "Papa fresca para cocinar",
-      category: "Alimentos",
-      price: 6000,
-    },
-
-    // Lácteos (rotación media)
-    {
-      title: "Leche Entera La Campiña 1L",
-      description: "Leche pasteurizada fresca",
-      category: "Lácteos",
-      price: 4000,
-    },
-    {
-      title: "Queso Paipa 200g",
-      description: "Queso fresco típico colombiano",
-      category: "Lácteos",
-      price: 9000,
-    },
-    {
-      title: "Yogurt Griego 150g",
-      description: "Yogurt natural sin azúcar",
-      category: "Lácteos",
-      price: 3500,
-    },
-    {
-      title: "Mantequilla 250g",
-      description: "Mantequilla sin sal",
-      category: "Lácteos",
-      price: 5500,
-    },
-
-    // Bebidas (rotación variable)
-    {
-      title: "Café Sello Rojo 250g",
-      description: "Café molido tradicional",
-      category: "Bebidas",
-      price: 7000,
-    },
-    {
-      title: "Jugo Hit 1L",
-      description: "Jugo de frutas natural",
-      category: "Bebidas",
-      price: 5000,
-    },
-    {
-      title: "Agua Cristal 600ml",
-      description: "Agua natural",
-      category: "Bebidas",
-      price: 2000,
-    },
-    {
-      title: "Gaseosa Coca Cola 2L",
-      description: "Bebida gaseosa",
-      category: "Bebidas",
-      price: 8000,
-    },
-
-    // Panadería (rotación media-baja)
-    {
-      title: "Pan Bimbo 500g",
-      description: "Pan de molde integral",
-      category: "Panadería",
-      price: 6000,
-    },
-    {
-      title: "Galletas Festival 200g",
-      description: "Galletas dulces surtidas",
-      category: "Panadería",
-      price: 4500,
-    },
-    {
-      title: "Tostadas 200g",
-      description: "Tostadas de pan integral",
-      category: "Panadería",
-      price: 4000,
-    },
-
-    // Productos de limpieza (baja rotación)
-    {
-      title: "Detergente Ariel 1kg",
-      description: "Detergente en polvo",
-      category: "Limpieza",
-      price: 12000,
-    },
-    {
-      title: "Jabón Dove 90g",
-      description: "Jabón de tocador",
-      category: "Limpieza",
-      price: 3500,
-    },
-    {
-      title: "Papel Higiénico 4 rollos",
-      description: "Papel higiénico suave",
-      category: "Limpieza",
-      price: 8000,
-    },
-    {
-      title: "Cloro 1L",
-      description: "Cloro para desinfección",
-      category: "Limpieza",
-      price: 3000,
-    },
+    { title: "Arroz Diana 1kg", description: "Arroz blanco de alta calidad", category: "Alimentos", price: 5000 },
+    { title: "Aceite Girasol 1L", description: "Aceite vegetal puro para cocinar", category: "Alimentos", price: 8000 },
+    { title: "Azúcar Blanca 1kg", description: "Azúcar refinada para repostería", category: "Alimentos", price: 3500 },
+    { title: "Huevos XL Docena", description: "Huevos frescos tamaño XL", category: "Alimentos", price: 12000 },
+    { title: "Papa Pastusa 2kg", description: "Papa fresca para cocinar", category: "Alimentos", price: 6000 },
+    { title: "Leche Entera La Campiña 1L", description: "Leche pasteurizada fresca", category: "Lácteos", price: 4000 },
+    { title: "Queso Paipa 200g", description: "Queso fresco típico colombiano", category: "Lácteos", price: 9000 },
+    { title: "Yogurt Griego 150g", description: "Yogurt natural sin azúcar", category: "Lácteos", price: 3500 },
+    { title: "Mantequilla 250g", description: "Mantequilla sin sal", category: "Lácteos", price: 5500 },
+    { title: "Café Sello Rojo 250g", description: "Café molido tradicional", category: "Bebidas", price: 7000 },
+    { title: "Jugo Hit 1L", description: "Jugo de frutas natural", category: "Bebidas", price: 5000 },
+    { title: "Agua Cristal 600ml", description: "Agua natural", category: "Bebidas", price: 2000 },
+    { title: "Gaseosa Coca Cola 2L", description: "Bebida gaseosa", category: "Bebidas", price: 8000 },
+    { title: "Pan Bimbo 500g", description: "Pan de molde integral", category: "Panadería", price: 6000 },
+    { title: "Galletas Festival 200g", description: "Galletas dulces surtidas", category: "Panadería", price: 4500 },
+    { title: "Tostadas 200g", description: "Tostadas de pan integral", category: "Panadería", price: 4000 },
+    { title: "Detergente Ariel 1kg", description: "Detergente en polvo", category: "Limpieza", price: 12000 },
+    { title: "Jabón Dove 90g", description: "Jabón de tocador", category: "Limpieza", price: 3500 },
+    { title: "Papel Higiénico 4 rollos", description: "Papel higiénico suave", category: "Limpieza", price: 8000 },
+    { title: "Cloro 1L", description: "Cloro para desinfección", category: "Limpieza", price: 3000 },
   ];
 
-  // Crear productos en la distribuidora
-  const distributorProducts = await Promise.all(
-    realProducts.map((product) =>
-      prisma.product.create({
-        data: {
-          ...product,
-          available: true,
-          inventoryId: distributorInventory.id,
-        },
-      })
-    )
-  );
+  // Crear productos en la distribuidora 
+  const distributorProducts = await Promise.all( 
+     realProducts.map((product) => prisma.product.create({ 
+      data: { 
+        ...product, 
+        available: true, 
+        minimumStock: Math.floor(Math.random() * 11) + 10, // Stock mínimo entre 10 y 20
+        inventoryId: distributorInventory.id, 
+      }, 
+    }) 
+  ) 
+);
 
-  // Crear algunos productos en la tienda (inventario del manager)
+  // Crear productos en tienda
   const storeProducts = await Promise.all(
     distributorProducts.slice(0, 12).map((product) =>
       prisma.product.create({
@@ -231,39 +121,25 @@ async function main() {
           description: product.description,
           category: product.category,
           price: product.price,
-          available: Math.random() > 0.2, // 80% disponibles, 20% agotados
+          available: Math.random() > 0.2,
           inventoryId: storeInventory.id,
+          minimumStock: Math.floor(Math.random() * 11) + 10,
         },
       })
     )
   );
 
-  // 5. Crear batches para algunos productos
+  // 5. Crear lotes correctamente relacionados
   const batches = await Promise.all(
-    distributorProducts.slice(0, 8).map((product) =>
+    distributorProducts.slice(0, 10).map((product) =>
       prisma.batch.create({
         data: {
           code: `BATCH-${product.id}-${Date.now()}`,
           quantity: Math.floor(Math.random() * 100) + 50,
-          expirationDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 días
-          location: "Almacén Principal",
+          expirationDate: new Date(Date.now() + 45 * 24 * 60 * 60 * 1000),
+          location: "Bodega Central",
           productId: product.id,
-          inventoryId: storeInventory.id,
-        },
-      })
-    )
-  );
-
-  const batch30 = await Promise.all(
-    distributorProducts.slice(0, 30).map((product) =>
-      prisma.batch.create({
-        data: {
-          code: `BATCH30-${product.id}-${Date.now()}`,
-          quantity: Math.floor(Math.random() * 100) + 20,
-          expirationDate: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000), // 60 días
-          location: "Almacén Secundario",
-          productId: product.id,
-          inventoryId: storeInventory.id,
+          inventoryId: distributorInventory.id,
         },
       })
     )
@@ -366,7 +242,7 @@ async function main() {
   console.log(`- Productos en tienda: ${storeProducts.length}`);
   console.log(
     `- Productos agotados en tienda: ${
-      storeProducts.filter((p) => !p.available).length
+      storeProducts.filter((product) => !product.available).length
     }`
   );
   console.log(`- Batches creados: ${batches.length}`);

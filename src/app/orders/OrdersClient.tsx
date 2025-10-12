@@ -69,7 +69,7 @@ export default function OrdersClient({
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           <div className="bg-white rounded-lg sm:rounded-xl shadow-lg p-4 sm:p-6">
             <h3 className="text-sm font-medium text-gray-500 mb-1">
-              Total Pedidos
+              Total Pedidos 
             </h3>
             <p className="text-2xl font-bold text-gray-900">24</p>
           </div>

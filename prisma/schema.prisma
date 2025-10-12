@@ -17,19 +17,20 @@ model User {
   password         String
   inventoryManager InventoryManager?
   salesperson      Salesperson?
+  notifications    Notification[]
 
   @@map("users")
 }
 
 model Store {
-  id                  Int                   @id @default(autoincrement())
-  address             String
-  neighborhood        String
-  capital             Int
-  name                String
-  financial_movements financial_movements[]
-  inventory           Inventory?
-  inventoryManager    InventoryManager?
+  id               Int               @id @default(autoincrement())
+  address          String
+  neighborhood     String
+  capital          Int
+  name             String
+  inventory        Inventory?
+  inventoryManager InventoryManager?
+  alerts Alert[]
 
   @@map("stores")
 }
@@ -47,9 +48,9 @@ model InventoryManager {
 model Salesperson {
   userId      Int        @id
   inventoryId Int?
-  orders      Order[]
   inventory   Inventory? @relation("SalespersonInventory", fields: [inventoryId], references: [id])
   user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orders      Order[]
 
   @@map("salespeople")
 }
@@ -67,16 +68,18 @@ model Inventory {
 }
 
 model Product {
-  id          Int        @id @default(autoincrement())
-  title       String
-  description String
-  category    String
-  price       Int
-  available   Boolean    @default(true)
-  inventoryId Int?
-  batches     Batch[]
-  orders      Order[]
-  inventory   Inventory? @relation(fields: [inventoryId], references: [id])
+  id           Int        @id @default(autoincrement())
+  title        String
+  description  String
+  category     String
+  price        Int
+  available    Boolean    @default(true)
+  minimumStock Int        @default(0)
+  inventoryId  Int?
+  batches      Batch[]
+  orders       Order[]
+  alerts       Alert[]
+  inventory    Inventory? @relation(fields: [inventoryId], references: [id])
 
   @@map("products")
 }
@@ -105,20 +108,41 @@ model Order {
   salespersonId      Int
   productId          Int
   sentBatchId        Int?
+  createdAt          DateTime         @default(now())
   inventoryManager   InventoryManager @relation(fields: [inventoryManagerId], references: [userId], onDelete: Cascade)
   product            Product          @relation(fields: [productId], references: [id], onDelete: Cascade)
   salesperson        Salesperson      @relation(fields: [salespersonId], references: [userId], onDelete: Cascade)
   sentBatch          Batch?           @relation(fields: [sentBatchId], references: [id])
+  notifications      Notification[]
 
   @@map("orders")
 }
 
-model financial_movements {
-  id          String   @id
-  type        String
-  amount      Decimal  @db.Decimal(10, 2)
-  description String
-  date        DateTime @default(now())
-  storeId     Int?
-  stores      Store?   @relation(fields: [storeId], references: [id])
+model Alert {
+  id           Int      @id @default(autoincrement())
+  type         String   @default("LOW_STOCK")
+  message      String
+  createdAt    DateTime @default(now())
+  resolved     Boolean  @default(false)
+  productId    Int
+  product      Product  @relation(fields: [productId], references: [id])
+  storeId      Int
+  store        Store    @relation(fields: [storeId], references: [id])
+
+  @@map("alerts")
+}
+
+model Notification {
+  id           Int      @id @default(autoincrement())
+  title        String
+  message      String
+  type         String   // "ORDER_CREATED" | "ORDER_STATUS_CHANGED" | etc.
+  createdAt    DateTime @default(now())
+  read         Boolean  @default(false)
+  recipientId  Int
+  recipient    User     @relation(fields: [recipientId], references: [id])
+  orderId      Int?
+  order        Order?   @relation(fields: [orderId], references: [id])
+
+  @@map("notifications")
 }
