@@ -2,7 +2,7 @@ import { auth } from "@/src/auth";
 import { prisma } from "@/src/lib/prisma";
 import { redirect } from "next/navigation";
 import DashboardClient from "./DashboardClient";
-import { getProductsInStock, getLowStockAlerts, getPendingOrders, getResolvedOrders } 
+import { getTotalOfferedProducts, getLowStockAlerts, getPendingOrders, getReceivedOrders } 
   from "@/src/lib/services/inventoryManagerService";
 import { getPendingOrdersForSalesperson, getStoresForDistributor, getAvailableProductsForDistributor, getMonthlyRevenueForDistributor } 
   from "@/src/lib/services/salespersonService";
@@ -74,10 +74,10 @@ export default async function Dashboard() {
     const store = user.inventoryManager?.store;
     if (!store?.inventory?.id) return null;
 
-    const { totalStock } = await getProductsInStock(store.inventory.id);
+    const totalStock = await getTotalOfferedProducts(store.inventory.id);
     const alerts = await getLowStockAlerts(store.id);
     const orders = await getPendingOrders(user.id);
-    const resolvedOrders = await getResolvedOrders(user.id);
+    const receivedOrders = await getReceivedOrders(user.id);
 
     return {
       cards: [
@@ -116,9 +116,9 @@ export default async function Dashboard() {
           description: `${alerts.length} alertas sin resolver`,
         },
       ],
-      orders: resolvedOrders.map((order) => ({
+      orders: receivedOrders.map((order) => ({
         name: `Pedido #${order.id}`,
-        quantity: order.items?.reduce((t, i) => t + i.quantity, 0) || 0,
+        quantity: order.quantity || 0,
         company: "Distribuidora Central",
         location: store.name,
         rating: 4,
@@ -165,6 +165,13 @@ export default async function Dashboard() {
 
   if (userType === "inventory_manager") {
     dashboardData = await getInventoryManagerDashboard();
+    if (!dashboardData) {
+      dashboardData = {
+        cards: [],
+        recentActivity: [],
+        orders: [],
+      };
+    }
   } else {
     dashboardData = await getSalesOrDistributorDashboard();
   }

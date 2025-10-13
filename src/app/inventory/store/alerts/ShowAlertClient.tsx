@@ -20,6 +20,7 @@ interface Alert {
   resolved: boolean;
   product: Product;
   store: Store;
+  hasActiveOrder: boolean;
 }
 
 interface ShowAlertClientProps {
@@ -74,6 +75,10 @@ export default function ShowAlertClient({
     setTimeout(() => setMessage({ text: "", type: null }), 4000);
   };
 
+  const handleMakeOrder= async (productId: number) => {
+    router.push(`/orders/create?productId=${productId}`);
+  };
+
   const handleBack = () => {
     router.back();
   };
@@ -110,21 +115,44 @@ export default function ShowAlertClient({
             {alerts.map((alert) => (
               <div
                 key={alert.id}
-                className="bg-red-50 border border-red-200 rounded-lg p-4 shadow-sm flex justify-between items-center"
+                className={`border rounded-lg p-4 shadow-sm flex justify-between items-center ${
+                  alert.resolved
+                    ? "bg-green-50 border-green-200"
+                    : "bg-red-50 border-red-200"
+                }`}
               >
                 <div>
-                  <p className="font-semibold text-red-700">{alert.message}</p>
-                  <p className="text-sm text-gray-600">
-                    Tienda: <strong>{alert.store?.name}</strong> • Producto:{" "}
-                    <strong>{alert.product?.title}</strong>
-                  </p>
+                  <p className="font-semibold text-gray-700">{alert.message}</p>
+
+                  {alert.hasActiveOrder && (
+                    <p className="text-sm text-yellow-700 mt-2 font-medium">
+                      ⚠️ Hay un pedido en curso para este producto.
+                    </p>
+                  )}
+
+                  {alert.resolved && (
+                    <p className="text-sm text-green-700 mt-2 font-medium">
+                      ✅ Alerta resuelta
+                    </p>
+                  )}
                 </div>
-                <button
-                  onClick={() => handleDismiss(alert.id)}
-                  className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded"
-                >
-                  Marcar como resuelta
-                </button>
+
+                {!alert.resolved && !alert.hasActiveOrder && (
+                  <div className="flex gap-4">
+                    <button
+                      onClick={() => handleDismiss(alert.id)}
+                      className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded"
+                    >
+                      Marcar como resuelta
+                    </button>
+                    <button
+                      onClick={() => handleMakeOrder(alert.product.id)}
+                      className="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded"
+                    >
+                      Hacer pedido
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
           </div>

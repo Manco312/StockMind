@@ -8,11 +8,9 @@ export async function GET(
   const { storeId } = params;
 
   try {
-    // Traer solo alertas activas de esa tienda
     const alerts = await prisma.alert.findMany({
       where: {
         storeId: Number(storeId),
-        resolved: false,
       },
       include: {
         store: {
@@ -25,7 +23,31 @@ export async function GET(
       orderBy: { createdAt: "desc" },
     });
 
-    return NextResponse.json({ alerts }, { status: 200 });
+    const inventoryManager = await prisma.inventoryManager.findUnique({
+      where: { storeId: Number(storeId) },
+      select: { userId: true },
+    });
+
+    const inventoryManagerId = inventoryManager?.userId;
+
+    const alertsWithOrders = await Promise.all(
+      alerts.map(async (alert) => {
+        const existingOrder = await prisma.order.findFirst({
+          where: {
+            inventoryManagerId: Number(inventoryManagerId),
+            productId: alert.productId,
+            status: { in: ["pending", "in_progress"] }, // ajusta según tus estados
+          },
+        });
+
+        return {
+          ...alert,
+          hasActiveOrder: !!existingOrder,
+        };
+      })
+    );
+
+    return NextResponse.json({ alerts: alertsWithOrders}, { status: 200 });
   } catch (error) {
     console.error("Error al obtener alertas:", error);
     return NextResponse.json(

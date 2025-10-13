@@ -42,7 +42,7 @@ export async function POST(req: Request) {
             title: "Nuevo Pedido",
             message:
               "Producto: " + data.productName + " - Cantidad: " + data.quantity,
-            type: "ORDER_CREATED",
+            type: "order_created",
             recipient: {
               connect: { id: recipientUser.userId },
             },

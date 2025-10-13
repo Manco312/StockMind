@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect} from "react";
 import { InventoryManager } from "@/src/generated/prisma";
 
 type Product = {
@@ -13,19 +13,33 @@ type OrderFormProps = {
   offeredProducts: Product[];
   inventoryManager: InventoryManager;
   onSuccessAction: () => void;
+  preselectedProductId?: number; // Nuevo prop opcional
 };
 
 export default function OrderForm({
   offeredProducts,
   inventoryManager,
   onSuccessAction,
+  preselectedProductId,
 }: OrderFormProps) {
-  const [productId, setProductId] = useState(1);
+  const [productId, setProductId] = useState<number | undefined>(
+    preselectedProductId
+  );
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState<{ text: string; type: "success" | "error" | null }>({
+    text: "",
+    type: null,
+  });
 
   const selectedProduct = offeredProducts.find((p) => p.id == productId);
   const total = selectedProduct ? selectedProduct.price * quantity : 0; // cálculo en tiempo real
+
+  useEffect(() => {
+    if (productId) {
+      setProductId(preselectedProductId);
+    }
+  }, [preselectedProductId]);
 
   const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setQuantity(parseInt(e.target.value) || 1);
@@ -56,10 +70,11 @@ export default function OrderForm({
       });
 
       if (!response.ok) throw new Error("Error al crear pedido");
+      setMessage({ text: "Pedido creado exitosamente", type: "success" });
       onSuccessAction();
     } catch (error) {
       console.error("Error:", error);
-      alert("Hubo un error al crear el pedido.");
+      setMessage({ text: "Error creando pedido", type: "error" });
     } finally {
       setLoading(false);
     }
@@ -67,6 +82,16 @@ export default function OrderForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
+      {message.text && (
+          <div
+            className={`mb-4 p-3 rounded ${
+              message.type === "success" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+            }`}
+          >
+            {message.text}
+          </div>
+        )}
+    
       {/* Producto */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">

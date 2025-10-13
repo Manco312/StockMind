@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import OrderForm from "@/components/OrderForm";
 import AppLayout from "@/components/AppLayout";
 import { InventoryManager, Product } from "@/src/generated/prisma";
@@ -21,15 +22,17 @@ export default function CreateOrderClient({
   inventoryManager 
 }: CreateOrderClientProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const productId = searchParams.get("productId");
 
   const handleSuccess = () => {
-    router.push("/orders");
+    router.back(); 
   };
 
   return (
     <AppLayout
       userType={userType}
-      userName={userName}
+      userName={userName} 
       activeSection="orders"
       title="Pedidos"
     >
@@ -41,6 +44,7 @@ export default function CreateOrderClient({
           offeredProducts={offeredProducts}
           inventoryManager={inventoryManager}
           onSuccessAction={handleSuccess}
+          preselectedProductId={productId ? parseInt(productId) : undefined} 
         />
       </div>
     </AppLayout>
