@@ -41,8 +41,21 @@ export default async function AddProductPage() {
     redirect("/accounting/login");
   }
 
+  const storeInventoryId = manager.store?.inventory?.id;
+
   const distributorProducts = await prisma.product.findMany({
-    where: { inventory: { type: "Distributor" }, available: true },
+    where: {
+      inventory: { type: "Distributor" },
+      available: true,
+      NOT: {
+        id: {
+          in: await prisma.product.findMany({
+            where: { inventoryId: storeInventoryId },
+            select: { id: true },
+          }).then((res) => res.map((p) => p.id)),
+        },
+      },
+    },
     select: { id: true, title: true, price: true, description: true },
   });
 
