@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import AppLayout from "@/components/AppLayout";
 
 type UserType = "distributor" | "salesperson" | "inventory_manager";
@@ -13,6 +14,8 @@ export default function OrdersClient({
   userType,
   userName,
 }: OrdersClientProps) {
+  const router = useRouter();
+
   // Mock data for orders
   const orders = [
     {
@@ -69,7 +72,7 @@ export default function OrdersClient({
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           <div className="bg-white rounded-lg sm:rounded-xl shadow-lg p-4 sm:p-6">
             <h3 className="text-sm font-medium text-gray-500 mb-1">
-              Total Pedidos 
+              Total Pedidos
             </h3>
             <p className="text-2xl font-bold text-gray-900">24</p>
           </div>
@@ -168,7 +171,10 @@ export default function OrdersClient({
             Acciones Rápidas
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <button className="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors">
+            <button
+              onClick={() => router.push("/orders/create")}
+              className="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors"
+            >
               <div className="text-center">
                 <div className="text-2xl mb-2">📦</div>
                 <p className="text-sm font-medium text-gray-700">
