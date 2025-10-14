@@ -22,14 +22,13 @@ model User {
 }
 
 model Store {
-  id                  Int                   @id @default(autoincrement())
-  address             String
-  neighborhood        String
-  capital             Int
-  name                String
-  financial_movements financial_movements[]
-  inventory           Inventory?
-  inventoryManager    InventoryManager?
+  id               Int               @id @default(autoincrement())
+  address          String
+  neighborhood     String
+  capital          Int
+  name             String
+  inventory        Inventory?
+  inventoryManager InventoryManager?
 
   @@map("stores")
 }
@@ -67,16 +66,17 @@ model Inventory {
 }
 
 model Product {
-  id          Int        @id @default(autoincrement())
-  title       String
-  description String
-  category    String
-  price       Int
-  available   Boolean    @default(true)
-  inventoryId Int?
-  batches     Batch[]
-  orders      Order[]
-  inventory   Inventory? @relation(fields: [inventoryId], references: [id])
+  id           Int        @id @default(autoincrement())
+  title        String
+  description  String
+  category     String
+  price        Int
+  available    Boolean    @default(true)
+  inventoryId  Int?
+  minimumStock Int        @default(0)
+  batches      Batch[]
+  orders       Order[]
+  inventory    Inventory? @relation(fields: [inventoryId], references: [id])
 
   @@map("products")
 }
@@ -105,20 +105,11 @@ model Order {
   salespersonId      Int
   productId          Int
   sentBatchId        Int?
+  createdAt          DateTime         @default(now())
   inventoryManager   InventoryManager @relation(fields: [inventoryManagerId], references: [userId], onDelete: Cascade)
   product            Product          @relation(fields: [productId], references: [id], onDelete: Cascade)
   salesperson        Salesperson      @relation(fields: [salespersonId], references: [userId], onDelete: Cascade)
   sentBatch          Batch?           @relation(fields: [sentBatchId], references: [id])
 
   @@map("orders")
-}
-
-model financial_movements {
-  id          String   @id
-  type        String
-  amount      Decimal  @db.Decimal(10, 2)
-  description String
-  date        DateTime @default(now())
-  storeId     Int?
-  stores      Store?   @relation(fields: [storeId], references: [id])
 }
