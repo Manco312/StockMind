@@ -85,7 +85,7 @@ model Product {
 }
 
 model Batch {
-  id             Int       @id @default(autoincrement())
+  id             Int       @id @default(autoincrement())  
   code           String    @unique
   quantity       Int
   expirationDate DateTime

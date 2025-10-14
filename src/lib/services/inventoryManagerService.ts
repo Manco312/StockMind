@@ -56,6 +56,15 @@ const orders = await prisma.order.findMany({
 return orders;
 }
 
+export async function getCancelledOrders(inventoryManagerId: number) {
+const orders = await prisma.order.findMany({
+    where: { inventoryManagerId, status: "cancelled" },
+    include: { product: true },
+});
+return orders;
+}
+
+
 export async function getTotalPendingOrders(inventoryManagerId: number) {
   return await prisma.order.count({
     where: {
@@ -82,4 +91,17 @@ export async function getTotalProcessedOrders(inventoryManagerId: number) {
     },
   });
 }
+
+export async function getOrderById(orderId: number) {
+  return await prisma.order.findUnique({
+    where: { id: orderId },
+    include: { 
+      product: true, 
+      inventoryManager: {
+        include: { store: true },
+      },
+    },
+  });
+}
+
 

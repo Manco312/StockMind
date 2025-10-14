@@ -52,6 +52,7 @@ export default function ManageOrdersClient({
   const processedOrders = orders.filter((o) => o.status === "processed");
   const pendingOrders = orders.filter((o) => o.status === "pending");
   const receivedOrders = orders.filter((o) => o.status === "received");
+  const cancelledOrders = orders.filter((o) => o.status === "cancelled");
 
   // Reutilizable para cada grupo
   const renderOrdersSection = (title: string, ordersList: Order[]) => (
@@ -81,10 +82,12 @@ export default function ManageOrdersClient({
                       ? "bg-yellow-100 text-yellow-700"
                       : order.status === "processed"
                       ? "bg-blue-100 text-blue-700"
+                      : order.status === "cancelled"
+                      ? "bg-blue-100 text-red-700"
                       : "bg-green-100 text-green-700"
                   }`}
                 >
-                  {order.status.toUpperCase()}
+                  {order.status}
                 </p>
               </div>
 
@@ -134,6 +137,7 @@ export default function ManageOrdersClient({
         {renderOrdersSection("Procesadas", processedOrders)}
         {renderOrdersSection("Pendientes", pendingOrders)}
         {renderOrdersSection("Recibidas", receivedOrders)}
+        {renderOrdersSection("Canceladas", cancelledOrders)}
       </section>
     </AppLayout>
   );

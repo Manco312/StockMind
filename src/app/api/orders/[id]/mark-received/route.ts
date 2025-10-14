@@ -33,6 +33,11 @@ export async function PATCH(
       },
     });
 
+    await prisma.notification.updateMany({
+      where: { orderId: updatedOrder.id, type: "order_received", message: "La orden del producto \"" + updatedOrder.product?.title + "\" ha sido marcada como recibida." },
+      data: { read: true },
+    });
+
     return NextResponse.json({
       success: true,
       message: "Orden actualizada y notificación enviada correctamente",

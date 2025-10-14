@@ -2,7 +2,7 @@ import { prisma } from "@/src/lib/prisma";
 import { auth } from "@/src/auth";
 import { redirect } from "next/navigation";
 import ManageOrdersClient from "./ManageOrdersClient";
-import { getPendingOrders, getReceivedOrders, getProcessedOrders } 
+import { getPendingOrders, getReceivedOrders, getProcessedOrders, getCancelledOrders } 
   from "@/src/lib/services/inventoryManagerService";
 
 type UserType = "distributor" | "salesperson" | "inventory_manager";
@@ -38,7 +38,8 @@ export default async function ManageOrdersPage() {
   const pendingOrders = await getPendingOrders(user.id);
   const receivedOrders = await getReceivedOrders(user.id);
   const processedOrders = await getProcessedOrders(user.id);
-  const orders = [...pendingOrders, ...receivedOrders, ...processedOrders];
+  const cancelledOrders = await getCancelledOrders(user.id);
+  const orders = [...pendingOrders, ...receivedOrders, ...processedOrders, ...cancelledOrders];
 
   return (
     <ManageOrdersClient 
