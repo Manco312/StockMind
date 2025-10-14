@@ -11,6 +11,7 @@ export async function GET(
     const alerts = await prisma.alert.findMany({
       where: {
         storeId: Number(storeId),
+        resolved: false,
       },
       include: {
         store: {

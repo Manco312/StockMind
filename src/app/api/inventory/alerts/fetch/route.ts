@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/src/lib/prisma";
 
+
 /**
  * GET /api/alerts/fetch?storeId=123
  * Devuelve todas las alertas de una tienda específica.
