@@ -55,7 +55,7 @@ export default function Sidebar({
         if (userType === "inventory_manager") {
           router.push("/inventory/store");
         } else {
-          router.push("/dashboard/productos");
+          router.push("/inventory/distributor");
         }
         break;
       case "pedidos":
