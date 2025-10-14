@@ -22,7 +22,7 @@ export default function DistributorInventoryPage() {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const res = await fetch("/api/inventory/1/distributor-products");
+        const res = await fetch("/api/inventory/4/distributor-products");
         if (!res.ok) throw new Error("Error cargando productos");
         const data = await res.json();
         setProducts(data);
@@ -48,15 +48,28 @@ export default function DistributorInventoryPage() {
 
   const handleProductDeleted = async (id: number) => {
     try {
-      const res = await fetch(`/api/inventory/1/distributor-products/${id}`, {
+      const res = await fetch(`/api/inventory/4/distributor-products/${id}`, {
         method: "DELETE",
       });
-      if (!res.ok) throw new Error("Error eliminando producto");
+
+      const text = await res.text();
+      let body: any = null;
+      try { body = text ? JSON.parse(text) : null; } catch { body = text; }
+
+      if (!res.ok) {
+        console.error("DELETE error:", res.status, body);
+        const msg = body?.error ?? body ?? `Status ${res.status}`;
+        alert("Error eliminando producto: " + msg);
+        return;
+      }
+
       setProducts((prev) => prev.filter((p) => p.id !== id));
-    } catch (error) {
-      console.error(error);
+    } catch (err) {
+      console.error("Network error deleting:", err);
+      alert("Error eliminando producto (network). Revisa la consola.");
     }
   };
+
 
   return (
     <AppLayout
@@ -86,7 +99,7 @@ export default function DistributorInventoryPage() {
           ) : products.length === 0 ? (
             <p className="text-gray-600">No hay productos registrados.</p>
           ) : (
-            <table className="w-full text-left border-collapse">
+            <table className="w-full text-left border-collapse text-gray-600">
               <thead>
                 <tr className="border-b text-gray-700">
                   <th className="p-2">Nombre</th>
