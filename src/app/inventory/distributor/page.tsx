@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import AppLayout from "@/components/AppLayout";
 import AddDistributorProductClient from "./AddDistributorProductClient";
+import ConfirmModal from "@/components/ConfirmModal";
 
 interface Product {
   id: number;
@@ -17,6 +18,11 @@ export default function DistributorInventoryPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+
+  // Estado para modal de confirmación
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [deletingProduct, setDeletingProduct] = useState<Product | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   // Cargar productos al montar la vista
   useEffect(() => {
@@ -40,21 +46,32 @@ export default function DistributorInventoryPage() {
   };
 
   const handleProductUpdated = (updated: Product) => {
-    setProducts((prev) =>
-      prev.map((p) => (p.id === updated.id ? updated : p))
-    );
+    setProducts((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
     setEditingProduct(null);
   };
 
-  const handleProductDeleted = async (id: number) => {
+  // abrir modal de confirmación (no borra aquí)
+  const openDeleteConfirm = (product: Product) => {
+    setDeletingProduct(product);
+    setConfirmOpen(true);
+  };
+
+  // acción confirmada: borrar del servidor
+  const performDelete = async () => {
+    if (!deletingProduct) return;
+    setDeleteLoading(true);
     try {
-      const res = await fetch(`/api/inventory/4/distributor-products/${id}`, {
+      const res = await fetch(`/api/inventory/4/distributor-products/${deletingProduct.id}`, {
         method: "DELETE",
       });
 
       const text = await res.text();
       let body: any = null;
-      try { body = text ? JSON.parse(text) : null; } catch { body = text; }
+      try {
+        body = text ? JSON.parse(text) : null;
+      } catch {
+        body = text;
+      }
 
       if (!res.ok) {
         console.error("DELETE error:", res.status, body);
@@ -63,13 +80,17 @@ export default function DistributorInventoryPage() {
         return;
       }
 
-      setProducts((prev) => prev.filter((p) => p.id !== id));
+      // actualizar UI
+      setProducts((prev) => prev.filter((p) => p.id !== deletingProduct.id));
+      setConfirmOpen(false);
+      setDeletingProduct(null);
     } catch (err) {
       console.error("Network error deleting:", err);
       alert("Error eliminando producto (network). Revisa la consola.");
+    } finally {
+      setDeleteLoading(false);
     }
   };
-
 
   return (
     <AppLayout
@@ -85,21 +106,20 @@ export default function DistributorInventoryPage() {
             onProductAdded={handleProductAdded}
             onProductUpdated={handleProductUpdated}
             editingProduct={editingProduct}
+            inventoryId={4}
           />
         </div>
 
         {/* Lista de productos */}
         <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-lg font-semibold mb-4 text-gray-800">
-            Catálogo de Productos
-          </h2>
+          <h2 className="text-lg font-semibold mb-4 text-gray-800">Catálogo de Productos</h2>
 
           {loading ? (
             <p className="text-gray-600">Cargando productos...</p>
           ) : products.length === 0 ? (
             <p className="text-gray-600">No hay productos registrados.</p>
           ) : (
-            <table className="w-full text-left border-collapse text-gray-600">
+            <table className="w-full text-left border-collapse text-gray-800">
               <thead>
                 <tr className="border-b text-gray-700">
                   <th className="p-2">Nombre</th>
@@ -115,9 +135,7 @@ export default function DistributorInventoryPage() {
                     <td className="p-2">{p.title}</td>
                     <td className="p-2">{p.description}</td>
                     <td className="p-2">${p.price}</td>
-                    <td className="p-2">
-                      {p.available ? "Sí" : "No"}
-                    </td>
+                    <td className="p-2">{p.available ? "Sí" : "No"}</td>
                     <td className="p-2 text-center space-x-2">
                       <button
                         onClick={() => setEditingProduct(p)}
@@ -126,7 +144,7 @@ export default function DistributorInventoryPage() {
                         Editar
                       </button>
                       <button
-                        onClick={() => handleProductDeleted(p.id)}
+                        onClick={() => openDeleteConfirm(p)}
                         className="px-3 py-1 bg-red-100 text-red-700 rounded-md hover:bg-red-200"
                       >
                         Eliminar
@@ -139,6 +157,30 @@ export default function DistributorInventoryPage() {
           )}
         </div>
       </div>
+
+      {/* Confirm modal */}
+      <ConfirmModal
+        open={confirmOpen}
+        title="Eliminar producto"
+        message={
+          deletingProduct ? (
+            <>
+              ¿Estás seguro de eliminar <strong className="text-gray-900">{deletingProduct.title}</strong>?
+            </>
+          ) : (
+            "¿Estás seguro?"
+          )
+        }
+        confirmLabel="Eliminar"
+        cancelLabel="Cancelar"
+        loading={deleteLoading}
+        onConfirm={performDelete}
+        onCancel={() => {
+          if (deleteLoading) return;
+          setConfirmOpen(false);
+          setDeletingProduct(null);
+        }}
+      />
     </AppLayout>
   );
 }
