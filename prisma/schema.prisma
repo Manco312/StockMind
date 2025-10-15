@@ -16,7 +16,6 @@ model User {
   email            String            @unique
   password         String
   inventoryManager InventoryManager?
-  notifications    notifications[]
   notifications    Notification[]
   salesperson      Salesperson?
 
@@ -86,10 +85,11 @@ model Product {
 }
 
 model Batch {
-  id             Int       @id @default(autoincrement())  
+  id             Int       @id @default(autoincrement())
   code           String    @unique
   quantity       Int
   expirationDate DateTime
+  expired        Boolean   @default(false) // Added expired field
   location       String
   productId      Int
   inventoryId    Int
