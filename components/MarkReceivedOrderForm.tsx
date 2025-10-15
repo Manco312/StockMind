@@ -97,7 +97,7 @@ export default function MarkReceivedOrderForm({ order }: Props) {
             <p><strong>Código:</strong> {batch.code}</p>
             <p><strong>Cantidad:</strong> {batch.quantity}</p>
             <p><strong>Fecha de expiración:</strong> {batch.expirationDate ? new Date(batch.expirationDate).toLocaleDateString() : "—"}</p>
-            <p><strong>Producto:</strong> {batch.product?.title}</p>
+            <p><strong>Producto:</strong> {order.product?.title}</p>
           </div>
         ) : (
           <p className="text-gray-500">Cargando información del lote...</p>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 import AppLayout from "@/components/AppLayout";
 import { Order } from "@prisma/client";
 
@@ -19,13 +20,20 @@ export default function OrdersClient({
 }: OrdersClientProps) {
   const router = useRouter();
 
+  // 🔄 Recargar datos al entrar de nuevo a la vista
+  useEffect(() => {
+    router.refresh();
+  }, [router]);
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "received":
         return "bg-green-100 text-green-800";
-      case "processed":
-        return "bg-yellow-100 text-yellow-800";
+      case "accepted":
+        return "bg-blue-100 text-blue-800";
       case "pending":
+        return "bg-yellow-100 text-yellow-800";
+      case "cancelled":
         return "bg-red-100 text-red-800";
       default:
         return "bg-gray-100 text-gray-800";
@@ -46,28 +54,36 @@ export default function OrdersClient({
             <h3 className="text-sm font-medium text-gray-500 mb-1">
               Total Pedidos
             </h3>
-            <p className="text-2xl font-bold text-gray-900">{ordersData.totalOrders}</p>
+            <p className="text-2xl font-bold text-gray-900">
+              {ordersData.totalOrders}
+            </p>
           </div>
 
           <div className="bg-white rounded-lg sm:rounded-xl shadow-lg p-4 sm:p-6">
             <h3 className="text-sm font-medium text-gray-500 mb-1">
               Completados
             </h3>
-            <p className="text-2xl font-bold text-green-600">{ordersData.totalReceivedOrders}</p>
+            <p className="text-2xl font-bold text-green-600">
+              {ordersData.totalReceivedOrders}
+            </p>
           </div>
 
           <div className="bg-white rounded-lg sm:rounded-xl shadow-lg p-4 sm:p-6">
             <h3 className="text-sm font-medium text-gray-500 mb-1">
               En Proceso
             </h3>
-            <p className="text-2xl font-bold text-yellow-600">{ordersData.totalProcessedOrders}</p>
+            <p className="text-2xl font-bold text-yellow-600">
+              {ordersData.totalAcceptedOrders}
+            </p>
           </div>
 
           <div className="bg-white rounded-lg sm:rounded-xl shadow-lg p-4 sm:p-6">
             <h3 className="text-sm font-medium text-gray-500 mb-1">
               Pendientes
             </h3>
-            <p className="text-2xl font-bold text-red-600">{ordersData.totalPendingOrders}</p>
+            <p className="text-2xl font-bold text-red-600">
+              {ordersData.totalPendingOrders}
+            </p>
           </div>
         </div>
 
@@ -110,11 +126,11 @@ export default function OrdersClient({
           </div>
         </div>
 
-        {/* Orders Table */}
+        {/* Pending Orders Table */}
         <div className="bg-white rounded-lg sm:rounded-xl shadow-lg overflow-hidden">
           <div className="px-4 sm:px-6 py-4 border-b border-gray-200">
             <h3 className="text-lg font-semibold text-gray-800">
-              Pedidos Pendientes
+              Pedidos Recientes
             </h3>
           </div>
 
@@ -140,7 +156,7 @@ export default function OrdersClient({
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {ordersData.pendingOrders.map((order: Order) => (
+                {ordersData.orders.map((order: Order) => (
                   <tr key={order.id} className="hover:bg-gray-50">
                     <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       #{order.id}
@@ -169,7 +185,6 @@ export default function OrdersClient({
             </table>
           </div>
         </div>
-
       </div>
     </AppLayout>
   );
