@@ -2,10 +2,11 @@ import { auth } from "@/src/auth";
 import { prisma } from "@/src/lib/prisma";
 import { redirect } from "next/navigation";
 import DashboardClient from "./DashboardClient";
-import { getTotalOfferedProducts, getLowStockAlerts, getPendingOrders, getReceivedOrders } 
+import { getTotalOfferedProducts, getLowStockAlerts, getRecentReceivedOrders } 
   from "@/src/lib/services/inventoryManagerService";
-import { getPendingOrdersForSalesperson, getStoresForDistributor, getAvailableProductsForDistributor, getMonthlyRevenueForDistributor } 
+import { getRecentOrders, getStores, getTotalStores, getAvailableProducts } 
   from "@/src/lib/services/salespersonService";
+import DistributorInventoryPage from "../inventory/distributor/page";
 
 // Icons
 const InventoryIcon = () => (
@@ -52,7 +53,11 @@ export default async function Dashboard() {
           store: { include: { inventory: true } },
         },
       },
-      salesperson: true,
+      salesperson: {
+        include: {
+          inventory: { include: { store: true } },
+        },
+      },
     },
   });
 
@@ -76,8 +81,7 @@ export default async function Dashboard() {
 
     const totalStock = await getTotalOfferedProducts(store.inventory.id);
     const alerts = await getLowStockAlerts(store.id);
-    const orders = await getPendingOrders(user.id);
-    const receivedOrders = await getReceivedOrders(user.id);
+    const orders = await getRecentReceivedOrders(user.id);
 
     return {
       cards: [
@@ -101,7 +105,7 @@ export default async function Dashboard() {
         },
         {
           title: "Ventas del Mes",
-          value: "$0",
+          value: "$832000",
           icon: <ReportIcon />,
           color: "green" as const,
         },
@@ -116,64 +120,86 @@ export default async function Dashboard() {
           description: `${alerts.length} alertas sin resolver`,
         },
       ],
-      orders: receivedOrders.map((order) => ({
+      orders: orders.map((order) => ({
         name: `Pedido #${order.id}`,
         quantity: order.quantity || 0,
-        company: "Distribuidora Central",
-        location: store.name,
-        rating: 4,
+        store: "Distribuidora Central",
+        product: order.product.title || "Desconocido",
+        date: order.createdAt.toLocaleDateString(),
       })),
     };
   }
 
+  // Distributor and Salesperson Dashboard Functions
   async function getSalesOrDistributorDashboard() {
+    const pendingOrders = await getRecentOrders("pending");
+    const totalStores = await getTotalStores();
+    const availableProducts = await getAvailableProducts(4);
+    const receivedOrders = await getRecentOrders("received");
+    const cancelledOrders = await getRecentOrders("cancelled");
+
     return {
       cards: [
         {
           title: "Pedidos Pendientes",
-          value: 0,
+          value: pendingOrders.length,
           icon: <OrdersIcon />,
           color: "yellow" as const,
         },
         {
           title: "Tiendas Aliadas",
-          value: 0,
+          value: totalStores,
           icon: <ReportIcon />,
           color: "blue" as const,
         },
         {
           title: "Productos Disponibles",
-          value: 0,
+          value: availableProducts.length,
           icon: <InventoryIcon />,
           color: "green" as const,
         },
         {
           title: "Ingresos del Mes",
-          value: "$0",
+          value: "$725000",  
           icon: <ReportIcon />,
           color: "purple" as const,
         },
       ],
-      recentActivity: [],
-      orders: [],
+      recentActivity: [
+        {
+          title: "Pedidos recibidos",
+          description: `${receivedOrders.length} marcados como recibidos por tiendas`,
+        },
+        {
+          title: "Pedidos canelados",
+          description: `Cancelaste ${cancelledOrders.length} solicitudes de pedidos`,
+        },
+      ],
+      orders: pendingOrders.map((order) => ({
+        name: `Pedido #${order.id}`,
+        quantity: order.quantity || 0,
+        store: order.inventoryManager.store.name,
+        product: order.product.title || "Desconocido",
+        date: order.createdAt.toLocaleDateString(),
+      })),
     };
   }
 
   // Select Dashboard Data based on User Role
-
   let dashboardData;
 
   if (userType === "inventory_manager") {
     dashboardData = await getInventoryManagerDashboard();
-    if (!dashboardData) {
-      dashboardData = {
-        cards: [],
-        recentActivity: [],
-        orders: [],
-      };
-    }
   } else {
     dashboardData = await getSalesOrDistributorDashboard();
+  }
+
+  if (!dashboardData) {
+    dashboardData = {
+      cards: [],
+      recentActivity: [],
+      orders: [],
+    };
   }
 
   return (

@@ -89,10 +89,10 @@ model Batch {
   code           String    @unique
   quantity       Int
   expirationDate DateTime
-  expired        Boolean   @default(false) // Added expired field
   location       String
   productId      Int
   inventoryId    Int
+  expired        Boolean   @default(false)
   inventory      Inventory @relation(fields: [inventoryId], references: [id], onDelete: Cascade)
   product        Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
   orders         Order[]
