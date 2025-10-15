@@ -37,7 +37,7 @@ export async function GET(
           where: {
             inventoryManagerId: Number(inventoryManagerId),
             productId: alert.productId,
-            status: { in: ["pending", "in_progress"] }, // ajusta según tus estados
+            status: { in: ["pending", "in_progress"] }, 
           },
         });
 
