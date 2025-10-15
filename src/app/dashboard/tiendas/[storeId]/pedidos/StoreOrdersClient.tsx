@@ -31,7 +31,10 @@ export default function StoreOrdersClient({
 
     try {
       const res = await fetch(`/api/stores/${storeId}/orders?${params.toString()}`);
-      if (!res.ok) throw new Error("Failed to fetch orders");
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Failed to fetch orders");
+      }
       const data = await res.json();
       setOrders(data.orders || []);
     } catch (error) {
@@ -64,7 +67,7 @@ export default function StoreOrdersClient({
 
   return (
     <div className="space-y-6">
-      {/* Search Filters */}
+      {/* Filter and Search Controls */}
       <div className="bg-white p-4 sm:p-6 rounded-xl shadow-lg">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
           <input
@@ -89,9 +92,7 @@ export default function StoreOrdersClient({
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
             />
           </div>
-          <Button onClick={() => router.push("/dashboard/tiendas")} variant="outline">
-            Volver a Tiendas
-          </Button>
+          <Button onClick={() => router.push("/dashboard/tiendas")} variant="outline">Volver a Tiendas</Button>
         </div>
       </div>
 
