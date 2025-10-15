@@ -1,14 +1,11 @@
-import { NextResponse } from "next/server";
-import { prisma } from "@/src/lib/prisma";
+import { NextResponse } from "next/server"
+import { prisma } from "@/src/lib/prisma"
 
-export async function GET(
-  request: Request,
-  { params }: { params: { storeId: string } }
-) {
+export async function GET(request: Request, { params }: { params: { storeId: string } }) {
   try {
-    const storeId = parseInt(params.storeId, 10);
+    const storeId = Number.parseInt(params.storeId, 10)
     if (isNaN(storeId)) {
-      return NextResponse.json({ error: "ID de tienda inválido" }, { status: 400 });
+      return NextResponse.json({ error: "ID de tienda inválido" }, { status: 400 })
     }
 
     // Buscar productos de la tienda
@@ -22,37 +19,86 @@ export async function GET(
         batches: true,
         inventory: true,
       },
-    });
+    })
 
-    const alertsToCreate: any[] = [];
-    const alertsToResolve: any[] = [];
+    const alertsToCreate: any[] = []
+    const alertsToResolve: any[] = []
 
     for (const product of products) {
-      const totalStock = product.batches.reduce(
-        (sum, batch) => sum + batch.quantity,
-        0
-      );
+      const totalStock = product.batches.reduce((sum, batch) => sum + batch.quantity, 0)
 
       const existingAlert = await prisma.alert.findFirst({
-        where: { productId: product.id, storeId: storeId, resolved: false },
-      });
+        where: {
+          productId: product.id,
+          storeId: storeId,
+          resolved: false,
+          type: "LOW_STOCK",
+        },
+      })
 
       if (totalStock <= product.minimumStock) {
         if (!existingAlert) {
           alertsToCreate.push({
+            type: "LOW_STOCK",
             productId: product.id,
             storeId,
             message: `Stock bajo para ${product.title}: ${totalStock} unidades restantes.`,
-          });
+          })
         }
       } else if (existingAlert) {
-        alertsToResolve.push(existingAlert.id);
+        alertsToResolve.push(existingAlert.id)
       }
+    }
+
+    const now = new Date()
+    const allBatches = await prisma.batch.findMany({
+      where: {
+        inventory: {
+          storeId: storeId,
+        },
+        expirationDate: {
+          lt: now,
+        },
+        expired: false,
+      },
+      include: {
+        product: true,
+      },
+    })
+
+    for (const batch of allBatches) {
+      // Check if there's already an alert for this batch
+      const existingBatchAlert = await prisma.alert.findFirst({
+        where: {
+          productId: batch.productId,
+          storeId: storeId,
+          resolved: false,
+          type: "EXPIRED_BATCH",
+          message: {
+            contains: batch.code,
+          },
+        },
+      })
+
+      if (!existingBatchAlert) {
+        alertsToCreate.push({
+          type: "EXPIRED_BATCH",
+          productId: batch.productId,
+          storeId,
+          message: `Lote vencido: ${batch.product.title} - Lote ${batch.code} (${batch.quantity} unidades)`,
+        })
+      }
+
+      // Mark batch as expired
+      await prisma.batch.update({
+        where: { id: batch.id },
+        data: { expired: true },
+      })
     }
 
     // Crear nuevas alertas
     if (alertsToCreate.length > 0) {
-      await prisma.alert.createMany({ data: alertsToCreate });
+      await prisma.alert.createMany({ data: alertsToCreate })
     }
 
     // Marcar alertas resueltas
@@ -60,19 +106,16 @@ export async function GET(
       await prisma.alert.updateMany({
         where: { id: { in: alertsToResolve } },
         data: { resolved: true, message: "Stock normalizado" },
-      });
+      })
     }
 
     return NextResponse.json({
       message: "Revisión de alertas completada",
       created: alertsToCreate.length,
       resolved: alertsToResolve.length,
-    });
+    })
   } catch (error) {
-    console.error("❌ Error al verificar alertas:", error);
-    return NextResponse.json(
-      { error: "Error al verificar alertas de la tienda" },
-      { status: 500 }
-    );
+    console.error("❌ Error al verificar alertas:", error)
+    return NextResponse.json({ error: "Error al verificar alertas de la tienda" }, { status: 500 })
   }
 }

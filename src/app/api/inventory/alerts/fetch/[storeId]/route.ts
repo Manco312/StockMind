@@ -1,11 +1,8 @@
-import { NextResponse } from "next/server";
-import { prisma } from "@/src/lib/prisma";
+import { NextResponse } from "next/server"
+import { prisma } from "@/src/lib/prisma"
 
-export async function GET(
-  request: Request,
-  { params }: { params: { storeId: string } }
-) {
-  const { storeId } = params;
+export async function GET(request: Request, { params }: { params: { storeId: string } }) {
+  const { storeId } = params
 
   try {
     const alerts = await prisma.alert.findMany({
@@ -22,38 +19,40 @@ export async function GET(
         },
       },
       orderBy: { createdAt: "desc" },
-    });
+    })
 
     const inventoryManager = await prisma.inventoryManager.findUnique({
       where: { storeId: Number(storeId) },
       select: { userId: true },
-    });
+    })
 
-    const inventoryManagerId = inventoryManager?.userId;
+    const inventoryManagerId = inventoryManager?.userId
 
     const alertsWithOrders = await Promise.all(
       alerts.map(async (alert) => {
-        const existingOrder = await prisma.order.findFirst({
-          where: {
-            inventoryManagerId: Number(inventoryManagerId),
-            productId: alert.productId,
-            status: { in: ["pending", "in_progress"] }, 
-          },
-        });
+        let hasActiveOrder = false
+
+        if (alert.type === "LOW_STOCK") {
+          const existingOrder = await prisma.order.findFirst({
+            where: {
+              inventoryManagerId: Number(inventoryManagerId),
+              productId: alert.productId,
+              status: { in: ["pending", "in_progress"] },
+            },
+          })
+          hasActiveOrder = !!existingOrder
+        }
 
         return {
           ...alert,
-          hasActiveOrder: !!existingOrder,
-        };
-      })
-    );
+          hasActiveOrder,
+        }
+      }),
+    )
 
-    return NextResponse.json({ alerts: alertsWithOrders}, { status: 200 });
+    return NextResponse.json({ alerts: alertsWithOrders }, { status: 200 })
   } catch (error) {
-    console.error("Error al obtener alertas:", error);
-    return NextResponse.json(
-      { error: "Error al obtener alertas de la tienda" },
-      { status: 500 }
-    );
+    console.error("Error al obtener alertas:", error)
+    return NextResponse.json({ error: "Error al obtener alertas de la tienda" }, { status: 500 })
   }
 }
