@@ -14,8 +14,11 @@ export async function PATCH(
       where: { id: orderId },
       include: {
         product: true,
+        salesperson: { 
+          include: { inventory: true } 
+        },
         inventoryManager: {
-          include: { store: { include: { inventory: true } } },
+          include: { store: { include: { inventory: true } }},
         },
       },
     });
@@ -40,7 +43,10 @@ export async function PATCH(
 
     const updatedOrder = await prisma.order.update({
       where: { id: orderId },
-      data: { status: "accepted" },
+      data: { 
+        status: "accepted", 
+        createdAt: new Date(), 
+      },
     });
 
     const inventoryId = order.inventoryManager.store?.inventory?.id;
@@ -53,10 +59,12 @@ export async function PATCH(
 
     const newBatch = await prisma.batch.create({
       data: {
-        code: `BATCH-${Date.now()}`,
+        code: `BATCH-${Date.now()}-${order.productId}`,
         quantity,
         expirationDate: new Date(expirationDate),
         productId: order.productId,
+        location: "Por definir",
+        inventoryId: order.salesperson.inventory?.id,
         orders: {
           connect: { id: order.id },
         },

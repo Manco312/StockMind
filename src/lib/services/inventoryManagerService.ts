@@ -32,6 +32,14 @@ const alerts = await prisma.alert.findMany({
 return alerts;
 }
 
+export async function getAllOrders(inventoryManagerId: number) {
+const orders = await prisma.order.findMany({
+    where: { inventoryManagerId }, 
+    include: { product: true },
+});
+return orders;
+}
+
 export async function getPendingOrders(inventoryManagerId: number) {
 const orders = await prisma.order.findMany({
     where: { inventoryManagerId, status: "pending" },
@@ -48,9 +56,9 @@ const orders = await prisma.order.findMany({
 return orders;
 }
 
-export async function getProcessedOrders(inventoryManagerId: number) {
+export async function getAcceptedOrders(inventoryManagerId: number) {
 const orders = await prisma.order.findMany({
-    where: { inventoryManagerId, status: "processed" },
+    where: { inventoryManagerId, status: "accepted" },
     include: { product: true },
 });
 return orders;
@@ -83,11 +91,11 @@ export async function getTotalReceivedOrders(inventoryManagerId: number) {
   });
 }
 
-export async function getTotalProcessedOrders(inventoryManagerId: number) {
+export async function getTotalAcceptedOrders(inventoryManagerId: number) {
   return await prisma.order.count({
     where: {
       inventoryManagerId,
-      status: "processed",
+      status: "accepted"
     },
   });
 }
@@ -100,6 +108,7 @@ export async function getOrderById(orderId: number) {
       inventoryManager: {
         include: { store: true },
       },
+      
     },
   });
 }

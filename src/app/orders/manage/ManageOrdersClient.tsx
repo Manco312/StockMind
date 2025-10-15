@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, redirect } from "next/navigation";
 import AppLayout from "@/components/AppLayout";
 import { Order } from "@/src/generated/prisma";
 
@@ -24,35 +24,16 @@ export default function ManageOrdersClient({
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   const handleMarkReceived = async (id: number) => {
-    setLoadingId(id);
-    try {
-      const response = await fetch(`/api/orders/${id}/mark-received`, {
-        method: "PATCH",
-      });
-      if (!response.ok) throw new Error("Error al actualizar la orden");
-
-      setOrders((prev) =>
-        prev.map((o) => (o.id === id ? { ...o, status: "received" } : o))
-      );
-
-      setMessage({ type: "success", text: "✅ Orden marcada como recibida" });
-      setTimeout(() => setMessage(null), 2000);
-    } catch (error) {
-      console.error(error);
-      setMessage({ type: "error", text: "❌ Error al actualizar la orden" });
-      setTimeout(() => setMessage(null), 2000);
-    } finally {
-      setLoadingId(null);
-    }
+    router.push(`/orders/${id}/process`)
   };
 
   const handleBack = () => router.back();
 
   // Separar órdenes por estado
-  const processedOrders = orders.filter((o) => o.status === "processed");
+  const acceptedOrders = orders.filter((o) => o.status === "accepted");
   const pendingOrders = orders.filter((o) => o.status === "pending");
   const receivedOrders = orders.filter((o) => o.status === "received");
-  const cancelledOrders = orders.filter((o) => o.status === "cancelled");
+  const rejectedOrders = orders.filter((o) => o.status === "rejected");
 
   // Reutilizable para cada grupo
   const renderOrdersSection = (title: string, ordersList: Order[]) => (
@@ -80,9 +61,9 @@ export default function ManageOrdersClient({
                   className={`mt-2 inline-block px-3 py-1 rounded-full text-sm font-medium ${
                     order.status === "pending"
                       ? "bg-yellow-100 text-yellow-700"
-                      : order.status === "processed"
+                      : order.status === "accepted"
                       ? "bg-blue-100 text-blue-700"
-                      : order.status === "cancelled"
+                      : order.status === "rejected"
                       ? "bg-blue-100 text-red-700"
                       : "bg-green-100 text-green-700"
                   }`}
@@ -91,13 +72,13 @@ export default function ManageOrdersClient({
                 </p>
               </div>
 
-              {order.status === "processed" && (
+              {order.status === "accepted" && (
                 <button
                   onClick={() => handleMarkReceived(order.id)}
                   disabled={loadingId === order.id}
                   className="ml-auto bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 disabled:opacity-50"
                 >
-                  {loadingId === order.id ? "Actualizando..." : "Marcar como recibida"}
+                  {loadingId === order.id ? "Cargando..." : "Marcar como recibido"}
                 </button>
               )}
             </div>
@@ -110,7 +91,7 @@ export default function ManageOrdersClient({
   return (
     <AppLayout userType={userType} userName={userName} activeSection="orders">
       <section className="p-3">
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex justify-between items-center mb-1">
           <h1 className="text-2xl font-bold text-gray-800">Gestión de Pedidos</h1>
           <button
             onClick={handleBack}
@@ -119,6 +100,9 @@ export default function ManageOrdersClient({
             ← Volver
           </button>
         </div>
+        <h3 className="text-m text-gray-800 mb-6">
+          A continuación se muestra el estado de los pedidos conforme a la respuesta de la distribuidora
+        </h3>
 
         {/* Notificación flotante */}
         {message && (
@@ -134,10 +118,11 @@ export default function ManageOrdersClient({
         )}
 
         {/* Secciones */}
-        {renderOrdersSection("Procesadas", processedOrders)}
+        {renderOrdersSection("Aceptados", acceptedOrders)}
         {renderOrdersSection("Pendientes", pendingOrders)}
-        {renderOrdersSection("Recibidas", receivedOrders)}
-        {renderOrdersSection("Canceladas", cancelledOrders)}
+        {renderOrdersSection("Rechazados", rejectedOrders)}
+        {renderOrdersSection("Recibidos", receivedOrders)}
+      
       </section>
     </AppLayout>
   );

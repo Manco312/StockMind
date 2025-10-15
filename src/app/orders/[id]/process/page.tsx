@@ -2,24 +2,9 @@ import { prisma } from "@/src/lib/prisma";
 import { auth } from "@/src/auth";
 import { redirect } from "next/navigation";
 import ProcessOrderClient from "./ProcessOrderClient";
-import { Order } from "@/src/generated/prisma";
 import { getOrderById } from "@/src/lib/services/inventoryManagerService";
 
 type UserType = "distributor" | "salesperson" | "inventory_manager";
-
-async function getOrder(orderId: number): Promise<Order | null> {
-  try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/orders/${orderId}`, {
-      cache: "no-store", // para obtener los datos más recientes
-    });
-    if (!res.ok) return null;
-    const data = await res.json();
-    return data;
-  } catch (error) {
-    console.error("Error fetching order:", error);
-    return null;
-  }
-}
 
 export default async function ProcessOrderPage({ params }: { params: { id: string } }) {
     const session = await auth();
@@ -51,11 +36,15 @@ export default async function ProcessOrderPage({ params }: { params: { id: strin
     }
     const order = await getOrderById(orderId);
 
+    if(!order) {
+        throw new Error("Pedido no hayado");
+    }
+
     return (
         <ProcessOrderClient 
         userType={userType}
         userName={user.name} 
         order={order} />
-        
+
     );
 }

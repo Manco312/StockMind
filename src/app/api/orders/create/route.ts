@@ -13,7 +13,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // Buscar un usuario de tipo 'salesperson' o 'distributor' según tu flujo
+    // Find only 'salesperson' or 'distributor' user
     const recipientUser = await prisma.salesperson.findFirst();
     if (!recipientUser) {
       return NextResponse.json(
@@ -22,7 +22,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // Crear la orden con notificación
+    // Create order with notification
     const order = await prisma.order.create({
       data: {
         status: "pending",

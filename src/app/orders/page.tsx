@@ -2,7 +2,7 @@ import { auth } from "@/src/auth";
 import { prisma } from "@/src/lib/prisma";
 import { redirect } from "next/navigation";
 import OrdersClient from "./OrdersClient";
-import { getPendingOrders, getTotalReceivedOrders, getTotalProcessedOrders, getTotalPendingOrders } 
+import { getPendingOrders, getTotalReceivedOrders, getTotalAcceptedOrders, getTotalPendingOrders } 
   from "@/src/lib/services/inventoryManagerService";
 
 type UserType = "distributor" | "salesperson" | "inventory_manager";
@@ -41,19 +41,23 @@ export default async function OrdersPage() {
 
   // Inventory Manager Dashboard Functions
   async function getOrdersClientData() {
+    if (!user) {
+      redirect("/accounting/login");
+    }
+    
     const store = user.inventoryManager?.store;
     if (!store?.inventory?.id) return null;
 
     const pendingOrders = await getPendingOrders(user.id);
     const totalReceivedOrders = await getTotalReceivedOrders(user.id);
-    const totalProcessedOrders = await getTotalProcessedOrders(user.id);
-    const totalOrders = pendingOrders.length + totalReceivedOrders + totalProcessedOrders;
+    const totalAcceptedOrders = await getTotalAcceptedOrders(user.id);
+    const totalOrders = pendingOrders.length + totalReceivedOrders + totalAcceptedOrders;
 
     return {
       pendingOrders: pendingOrders,
       totalOrders: totalOrders,
       totalReceivedOrders: totalReceivedOrders,
-      totalProcessedOrders: totalProcessedOrders,
+      totalAcceptedOrders: totalAcceptedOrders,
       totalPendingOrders: pendingOrders.length,
     };
   }

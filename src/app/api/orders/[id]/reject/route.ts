@@ -38,6 +38,7 @@ export async function PATCH(
       where: { id: orderId },
       data: {
         status: "rejected",
+        createdAt: new Date(), 
       },
     });
 
