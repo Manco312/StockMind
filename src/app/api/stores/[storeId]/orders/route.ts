@@ -4,7 +4,7 @@ import { prisma } from "@/src/lib/prisma";
 
 export async function GET(
   request: Request,
-  { params }: { params: { storeId: string } }
+  { params }: { params: Promise<{ storeId: string }> }
 ) {
   // 1. Authenticate and authorize
   const session = await auth();
@@ -21,15 +21,22 @@ export async function GET(
   // Only salespeople or distributors can access this
   if (!user || user.inventoryManager) {
     return NextResponse.json(
-      { error: "Acceso denegado. Se requiere rol de preventista o distribuidor." },
+      {
+        error:
+          "Acceso denegado. Se requiere rol de preventista o distribuidor.",
+      },
       { status: 403 }
     );
   }
 
   // 2. Get storeId and query parameters
-  const storeId = parseInt(params.storeId, 10);
+  const resolvedParams = await params;
+  const storeId = parseInt(resolvedParams.storeId, 10);
   if (isNaN(storeId)) {
-    return NextResponse.json({ error: "ID de tienda inválido" }, { status: 400 });
+    return NextResponse.json(
+      { error: "ID de tienda inválido" },
+      { status: 400 }
+    );
   }
 
   const { searchParams } = new URL(request.url);
@@ -46,7 +53,7 @@ export async function GET(
 
   if (searchQuery) {
     whereClause.product = {
-      title: { contains: searchQuery, mode: "insensitive" }
+      title: { contains: searchQuery, mode: "insensitive" },
     };
   }
 
