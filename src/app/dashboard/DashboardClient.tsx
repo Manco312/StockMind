@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect} from "react";
+import { useRouter } from "next/navigation";
 import AppLayout from "@/components/AppLayout";
 import DashboardCard from "@/components/DashboardCard";
 
@@ -30,18 +31,42 @@ interface DashboardClientProps {
   userType: UserType;
   userName: string;
   dashboardData: DashboardData;
+  storeId?: any; // Nuevo prop opcional
 }
 
 export default function DashboardClient({
   userType,
   userName,
   dashboardData,
+  storeId,
 }: DashboardClientProps) {
   const [activeSection, setActiveSection] = useState("inicio");
+  const router = useRouter();
+
+  useEffect(() => {
+    if (userType !== "inventory_manager" || !storeId) return;
+
+    // Hacer check de alertas solo para inventory_manager
+    const checkAlerts = async () => {
+      try {
+        const response = await fetch(`/api/inventory/alerts/check/${storeId}`);
+        if (!response.ok) throw new Error("Error verificando alertas");
+        console.log("✅ Alertas actualizadas");
+      } catch (error) {
+        console.error("Error:", error);
+      }
+    };
+
+    checkAlerts();
+  }, [userType, storeId]);
+
 
   const handleCardClick = (title: string) => {
     console.log(`Clicked on: ${title}`);
     // Implementar navegación según la tarjeta clickeada
+    if (title === "Alertas Activas") {
+      router.push("/inventory/store/alerts");
+    }
   };
 
   return (
