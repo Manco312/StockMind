@@ -17,6 +17,7 @@ model User {
   password         String
   inventoryManager InventoryManager?
   notifications    notifications[]
+  notifications    Notification[]
   salesperson      Salesperson?
 
   @@map("users")
@@ -28,7 +29,7 @@ model Store {
   neighborhood     String
   capital          Int
   name             String
-  alerts           alerts[]
+  alerts           Alert[]
   inventory        Inventory?
   inventoryManager InventoryManager?
 
@@ -76,7 +77,7 @@ model Product {
   available    Boolean    @default(true)
   inventoryId  Int?
   minimumStock Int        @default(0)
-  alerts       alerts[]
+  alerts       Alert[]
   batches      Batch[]
   orders       Order[]
   inventory    Inventory? @relation(fields: [inventoryId], references: [id])
@@ -85,7 +86,7 @@ model Product {
 }
 
 model Batch {
-  id             Int       @id @default(autoincrement())
+  id             Int       @id @default(autoincrement())  
   code           String    @unique
   quantity       Int
   expirationDate DateTime
@@ -109,7 +110,7 @@ model Order {
   productId          Int
   sentBatchId        Int?
   createdAt          DateTime         @default(now())
-  notifications      notifications[]
+  notifications      Notification[]
   inventoryManager   InventoryManager @relation(fields: [inventoryManagerId], references: [userId], onDelete: Cascade)
   product            Product          @relation(fields: [productId], references: [id], onDelete: Cascade)
   salesperson        Salesperson      @relation(fields: [salespersonId], references: [userId], onDelete: Cascade)
@@ -118,7 +119,7 @@ model Order {
   @@map("orders")
 }
 
-model alerts {
+model Alert {
   id        Int      @id @default(autoincrement())
   type      String   @default("LOW_STOCK")
   message   String
@@ -126,11 +127,13 @@ model alerts {
   resolved  Boolean  @default(false)
   productId Int
   storeId   Int
-  products  Product  @relation(fields: [productId], references: [id])
-  stores    Store    @relation(fields: [storeId], references: [id])
+  product   Product  @relation(fields: [productId], references: [id])
+  store     Store    @relation(fields: [storeId], references: [id])
+
+  @@map("alerts")
 }
 
-model notifications {
+model Notification {
   id          Int      @id @default(autoincrement())
   title       String
   message     String
@@ -139,6 +142,8 @@ model notifications {
   read        Boolean  @default(false)
   recipientId Int
   orderId     Int?
-  orders      Order?   @relation(fields: [orderId], references: [id])
-  users       User     @relation(fields: [recipientId], references: [id])
+  order       Order?   @relation(fields: [orderId], references: [id])
+  recipient   User     @relation(fields: [recipientId], references: [id])
+
+  @@map("notifications")
 }
