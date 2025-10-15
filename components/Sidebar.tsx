@@ -160,12 +160,22 @@ export default function Sidebar({
             </button>
           )}
           {(userType === "salesperson" || userType === "distributor") && (
-            <button
-              onClick={handleAddStore}
-              className="w-full bg-red-600 hover:bg-red-700 text-white py-3 px-4 rounded-lg font-medium transition-colors truncate"
-            >
-              Añadir Tienda
-            </button>
+            <>
+              <button
+                onClick={handleAddStore}
+                className="w-full bg-red-600 hover:bg-red-700 text-white py-3 px-4 rounded-lg font-medium transition-colors truncate"
+              >
+                Añadir Tienda
+              </button>
+              <button
+                onClick={() =>
+                  router.push("/dashboard/tiendas/register-manager")
+                }
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-lg font-medium transition-colors truncate"
+              >
+                Registrar Encargado
+              </button>
+            </>
           )}
           <button
             onClick={handleLogout}

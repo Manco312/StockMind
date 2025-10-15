@@ -39,8 +39,8 @@ async function getInitialOrders(storeId: number): Promise<OrderWithProduct[]> {
 
 export default async function StoreOrderHistoryPage({
   params,
-}: { 
-  params: { storeId: string };
+}: {
+  params: Promise<{ storeId: string }>;
 }) {
   const session = await auth();
   if (!session?.user?.email) {
@@ -72,7 +72,8 @@ export default async function StoreOrderHistoryPage({
     redirect("/dashboard");
   }
 
-  const storeId = parseInt(params.storeId, 10);
+  const resolvedParams = await params;
+  const storeId = parseInt(resolvedParams.storeId, 10);
   if (isNaN(storeId)) {
     redirect("/dashboard/tiendas");
   }

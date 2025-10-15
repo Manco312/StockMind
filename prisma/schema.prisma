@@ -16,6 +16,7 @@ model User {
   email            String            @unique
   password         String
   inventoryManager InventoryManager?
+  notifications    notifications[]
   salesperson      Salesperson?
 
   @@map("users")
@@ -27,6 +28,7 @@ model Store {
   neighborhood     String
   capital          Int
   name             String
+  alerts           alerts[]
   inventory        Inventory?
   inventoryManager InventoryManager?
 
@@ -74,6 +76,7 @@ model Product {
   available    Boolean    @default(true)
   inventoryId  Int?
   minimumStock Int        @default(0)
+  alerts       alerts[]
   batches      Batch[]
   orders       Order[]
   inventory    Inventory? @relation(fields: [inventoryId], references: [id])
@@ -106,10 +109,36 @@ model Order {
   productId          Int
   sentBatchId        Int?
   createdAt          DateTime         @default(now())
+  notifications      notifications[]
   inventoryManager   InventoryManager @relation(fields: [inventoryManagerId], references: [userId], onDelete: Cascade)
   product            Product          @relation(fields: [productId], references: [id], onDelete: Cascade)
   salesperson        Salesperson      @relation(fields: [salespersonId], references: [userId], onDelete: Cascade)
   sentBatch          Batch?           @relation(fields: [sentBatchId], references: [id])
 
   @@map("orders")
+}
+
+model alerts {
+  id        Int      @id @default(autoincrement())
+  type      String   @default("LOW_STOCK")
+  message   String
+  createdAt DateTime @default(now())
+  resolved  Boolean  @default(false)
+  productId Int
+  storeId   Int
+  products  Product  @relation(fields: [productId], references: [id])
+  stores    Store    @relation(fields: [storeId], references: [id])
+}
+
+model notifications {
+  id          Int      @id @default(autoincrement())
+  title       String
+  message     String
+  type        String
+  createdAt   DateTime @default(now())
+  read        Boolean  @default(false)
+  recipientId Int
+  orderId     Int?
+  orders      Order?   @relation(fields: [orderId], references: [id])
+  users       User     @relation(fields: [recipientId], references: [id])
 }
