@@ -18,7 +18,7 @@ export async function PATCH(
           include: { inventory: true } 
         },
         inventoryManager: {
-          include: { store: { include: { inventory: true } }},
+          include: { store: { include: { inventory: true } } },
         },
       },
     });
@@ -27,7 +27,7 @@ export async function PATCH(
       return NextResponse.json({ error: "Pedido no encontrado" }, { status: 404 });
     }
 
-    if (order.status === "rejected" ) {
+    if (order.status === "rejected") {
       return NextResponse.json(
         { message: "El pedido ya fue rechazado previamente" },
         { status: 400 }
@@ -36,7 +36,7 @@ export async function PATCH(
 
     if (order.status === "accepted") {
       return NextResponse.json(
-        { message: "No se puede rechazar un pedido aceptado" },
+        { message: "El pedido ya fue aceptado previamente" },
         { status: 400 }
       );
     }
@@ -57,13 +57,17 @@ export async function PATCH(
       );
     }
 
+    const purchasePrice =
+      order.quantity > 0 ? order.price / order.quantity : 0;
+
     const newBatch = await prisma.batch.create({
       data: {
         code: `BATCH-${Date.now()}-${order.productId}`,
         quantity,
         expirationDate: new Date(expirationDate),
         productId: order.productId,
-        location: "Por definir",
+        location: location || "Por definir",
+        purchasePrice,
         inventoryId: order.salesperson.inventory?.id,
         orders: {
           connect: { id: order.id },
@@ -71,9 +75,10 @@ export async function PATCH(
       },
     });
 
+    // Notificamos al encargado de tienda
     await prisma.notification.create({
       data: {
-        recipientId: updatedOrder.inventoryManagerId, 
+        recipientId: updatedOrder.inventoryManagerId,
         title: "Pedido aceptado",
         message: `Tu pedido #${orderId} ha sido aceptado por el distribuidor.`,
         type: "order_accepted",

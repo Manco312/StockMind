@@ -199,10 +199,10 @@ export default function InventoryStoreClient({ userType, userName, storeName, pr
                   </span>
 
                   <button
-                    onClick={() => setEditingProduct(product)}
+                    onClick={() => router.push(`/inventory/store/products/${product.id}/edit`)}
                     className="text-blue-600 hover:text-blue-700 text-sm font-medium"
                   >
-                    Editar
+                    Editar Producto
                   </button>
                 </div>
               </Card>

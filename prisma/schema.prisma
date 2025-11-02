@@ -91,7 +91,7 @@ model Product {
 
 model ProductUpdate {
   id        Int       @id @default(autoincrement())
-  type      String    // "price_update" | "stock_update"
+  type      String    // "price_update" | "stock_add" | "stock_reduce"
   message   String
   date      DateTime  @default(now())
 

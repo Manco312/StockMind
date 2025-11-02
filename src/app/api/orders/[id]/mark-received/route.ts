@@ -64,6 +64,15 @@ export async function PATCH(
       },
     });
 
+    await prisma.productUpdate.create({
+      data: {
+        productId: order.productId,
+        type: "stock_add",
+        message: `Stock actualizado tras recibir el pedido #${orderId} - ${order.quantity} unidades recibidas.`,
+        date: new Date(),
+      },
+    });
+
     const recipientUser = await prisma.salesperson.findFirst();
     if (recipientUser) {
       await prisma.notification.create({
