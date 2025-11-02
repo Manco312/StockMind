@@ -3,7 +3,7 @@ import { auth } from "@/src/auth";
 import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
-  // 1️⃣ Validar sesión
+  // Validar sesión
   const session = await auth();
   if (!session?.user?.email)
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
@@ -17,7 +17,7 @@ export async function POST(req: Request) {
       { status: 404 }
     );
 
-  // 2️⃣ Verificar rol Inventory Manager
+  // Verificar rol Inventory Manager
   const manager = await prisma.inventoryManager.findUnique({
     where: { userId: user.id },
     include: { store: { include: { inventory: true } } },
@@ -35,7 +35,7 @@ export async function POST(req: Request) {
       { status: 404 }
     );
 
-  // 3️⃣ Obtener productos seleccionados del body
+  // Obtener productos seleccionados del body
   const body = await req.json();
   const selectedIds = body.products as number[];
   if (!selectedIds?.length)
@@ -44,11 +44,31 @@ export async function POST(req: Request) {
       { status: 400 }
     );
 
-  // 4️⃣ Actualizar inventario
-  await prisma.product.updateMany({
+  // Obtener los productos de la distribuidora
+  const distributorProducts = await prisma.product.findMany({
     where: { id: { in: selectedIds } },
-    data: { inventoryId: storeInventoryId },
   });
+
+  if (!distributorProducts.length)
+    return NextResponse.json({ error: "No se encontraron productos de distribuidora" }, { status: 404 });
+
+  // Crear nuevas instancias para el inventario de la tienda
+  const newProducts = await prisma.$transaction(
+    distributorProducts.map((product) =>
+      prisma.product.create({
+        data: {
+          title: product.title,
+          description: product.description,
+          category: product.category,
+          price: product.price,
+          available: product.available,
+          minimumStock: product.minimumStock,
+          inventoryId: storeInventoryId,
+          distributorProductId: product.id, // relación con el producto padre
+        },
+      })
+    )
+  );
 
   return NextResponse.json({ success: true });
 }

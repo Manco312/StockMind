@@ -79,15 +79,32 @@ model Product {
   alerts       Alert[]
   batches      Batch[]
   orders       Order[]
+  updates      ProductUpdate[]
   inventory    Inventory? @relation(fields: [inventoryId], references: [id])
 
+  distributorProductId Int?
+  distributorProduct   Product?   @relation("DistributorRelation", fields: [distributorProductId], references: [id])
+  storeProducts        Product[]  @relation("DistributorRelation")
+
   @@map("products")
+}
+
+model ProductUpdate {
+  id        Int       @id @default(autoincrement())
+  type      String    // "price_update" | "stock_update"
+  message   String
+  date      DateTime  @default(now())
+
+  // Relación con Product
+  productId Int
+  product   Product   @relation(fields: [productId], references: [id])
 }
 
 model Batch {
   id             Int       @id @default(autoincrement())
   code           String    @unique
   quantity       Int
+  purchasePrice  Int       @default(0)
   expirationDate DateTime
   location       String
   productId      Int
