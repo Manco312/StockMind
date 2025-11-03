@@ -7,6 +7,7 @@ type Product = {
   id: number;
   title: string;
   price: number;
+  inventoryId: number;
 };
 
 type OrderFormProps = {

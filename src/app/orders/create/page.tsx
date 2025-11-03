@@ -33,30 +33,36 @@ export default async function CreateOrderPage() {
         userType = "distributor";
       }
  
-    // Obtener los productos ofrecidos en el inventario del encargado
     const offeredProducts = await prisma.product.findMany({
-    where: {
+      where: {
         inventory: {
-        store: {
+          store: {
             inventoryManager: {
-            user: {
-                id: user.id,
+              user: { id: user.id },
             },
-            },
+          },
         },
-        },
-    },
-    select: {
+      },
+      select: {
         id: true,
-        title: true,
         inventoryId: true,
-        description: true,
-        category: true,
-        price: true,
         available: true,
-        minimumStock: true,
-    },
+        title: true,
+        distributorProduct: {
+          select: {
+            price: true,
+          },
+        },
+      },
     });
+
+    const formatted = offeredProducts.map((p) => ({
+      id: p.id,
+      inventoryId: p.inventoryId,
+      available: p.available,
+      title: p.title,
+      price: p.distributorProduct?.price ?? 0,
+    }));
 
     if (!user.inventoryManager) {
     redirect("/orders");
@@ -66,7 +72,7 @@ export default async function CreateOrderPage() {
     <CreateOrderClient
       userType={userType}
       userName={user.name} 
-      offeredProducts={offeredProducts}
+      offeredProducts={formatted}
       inventoryManager={user.inventoryManager}
     />
   );

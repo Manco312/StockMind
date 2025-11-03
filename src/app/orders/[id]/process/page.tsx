@@ -8,7 +8,8 @@ type UserType = "distributor" | "salesperson" | "inventory_manager";
 
 export default async function ProcessOrderPage({ params }: { params: { id: string } }) {
     const session = await auth();
-    const orderId = parseInt(params.id);
+    const { id } = await params
+    const orderId = parseInt(id)
         
     if (!session?.user?.email) {
     redirect("/accounting/login");

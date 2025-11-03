@@ -134,7 +134,7 @@ export default async function Dashboard() {
   async function getSalesOrDistributorDashboard() {
     const pendingOrders = await getRecentOrders("pending");
     const totalStores = await getTotalStores();
-    const availableProducts = await getAvailableProducts(4);
+    const availableProducts = await getAvailableProducts(8);
     const receivedOrders = await getRecentOrders("received");
     const cancelledOrders = await getRecentOrders("cancelled");
 
