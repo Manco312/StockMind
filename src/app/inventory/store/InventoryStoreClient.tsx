@@ -202,8 +202,15 @@ export default function InventoryStoreClient({ userType, userName, storeName, pr
                     onClick={() => router.push(`/inventory/store/products/${product.id}/edit`)}
                     className="text-blue-600 hover:text-blue-700 text-sm font-medium"
                   >
-                    Editar Producto
+                    Editar 
                   </button>
+                  <button
+                    onClick={() => router.push(`/inventory/store/products/${product.id}/history`)}
+                    className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                  >
+                    Historial
+                  </button>
+
                 </div>
               </Card>
             ))}

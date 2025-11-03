@@ -68,7 +68,7 @@ export async function PATCH(
       data: {
         productId: order.productId,
         type: "stock_add",
-        message: `Stock actualizado tras recibir el pedido #${orderId} - ${order.quantity} unidades recibidas.`,
+        message: `Stock actualizado con el pedido #${orderId}, ${order.quantity} unidades recibidas.`,
         date: new Date(),
       },
     });
