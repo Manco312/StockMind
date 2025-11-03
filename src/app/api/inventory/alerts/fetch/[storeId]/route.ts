@@ -2,12 +2,13 @@ import { NextResponse } from "next/server"
 import { prisma } from "@/src/lib/prisma"
 
 export async function GET(request: Request, { params }: { params: { storeId: string } }) {
-  const { storeId } = params
+  const { storeId } = await params
+  const storeIdInt = parseInt(storeId)
 
   try {
     const alerts = await prisma.alert.findMany({
       where: {
-        storeId: Number(storeId),
+        storeId: Number(storeIdInt),
         resolved: false,
       },
       include: {
@@ -22,7 +23,7 @@ export async function GET(request: Request, { params }: { params: { storeId: str
     })
 
     const inventoryManager = await prisma.inventoryManager.findUnique({
-      where: { storeId: Number(storeId) },
+      where: { storeId: Number(storeIdInt) },
       select: { userId: true },
     })
 

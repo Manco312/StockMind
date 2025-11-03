@@ -107,7 +107,7 @@ export default function OrderForm({
           <option value="">Seleccionar producto...</option>
           {offeredProducts.map((product) => (
             <option key={product.id} value={product.id}>
-              {product.title} - ${product.price.toLocaleString()} - {inventoryManager.userId}
+              {product.title} - ${product.price.toLocaleString()}
             </option>
           ))}
         </select>
