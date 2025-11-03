@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Sidebar from "@/components/Sidebar";
 import Header from "@/components/Header";
 
@@ -22,6 +22,28 @@ export default function AppLayout({
   title,
 }: AppLayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  const [notifications, setNotifications] = useState([]);
+
+  useEffect(() => {
+    async function fetchNotifications() {
+      try {
+        const res = await fetch("/api/notifications");
+        if (res.ok) {
+          const data = await res.json();
+          setNotifications(data);
+        }
+      } catch (error) {
+        console.error("Error al cargar notificaciones:", error);
+      }
+    }
+
+    fetchNotifications();
+
+    // Refresh notifications every minute
+    const interval = setInterval(fetchNotifications, 60000);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <div className="h-screen bg-gray-100 flex flex-col lg:flex-row overflow-hidden">
@@ -66,7 +88,7 @@ export default function AppLayout({
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0 min-h-0">
         {/* Header */}
-        <Header userType={userType} userName={userName} />
+        <Header userType={userType} userName={userName} notifications={notifications}/>
 
         {/* Page Content */}
         <main className="flex-1 p-3 sm:p-4 lg:p-6 overflow-y-auto overflow-x-hidden pt-14 lg:pt-6 min-h-0">

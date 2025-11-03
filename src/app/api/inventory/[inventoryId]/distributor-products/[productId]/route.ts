@@ -4,9 +4,13 @@ import { authorizeSalespersonForInventory } from "src/lib/authorizeDistributor";
 
 type Params = { inventoryId: string; productId: string };
 
-export async function PUT(req: Request, { params }: { params: Params }) {
-  const inventoryIdNum = Number(params.inventoryId);
-  const productIdNum = Number(params.productId);
+export async function PUT(
+  req: Request,
+  { params }: { params: Promise<Params> }
+) {
+  const resolvedParams = await params;
+  const inventoryIdNum = Number(resolvedParams.inventoryId);
+  const productIdNum = Number(resolvedParams.productId);
 
   if (Number.isNaN(inventoryIdNum) || Number.isNaN(productIdNum)) {
     return NextResponse.json({ error: "Invalid params" }, { status: 400 });
@@ -15,11 +19,20 @@ export async function PUT(req: Request, { params }: { params: Params }) {
   // Autorización
   const authRes = await authorizeSalespersonForInventory(inventoryIdNum);
   if (!authRes.ok) {
-    return NextResponse.json({ error: authRes.message }, { status: authRes.status });
+    return NextResponse.json(
+      { error: authRes.message },
+      { status: authRes.status }
+    );
   }
 
   const body = await req.json();
-  const { title, description = "", category = "", price = 0, available = true } = body ?? {};
+  const {
+    title,
+    description = "",
+    category = "",
+    price = 0,
+    available = true,
+  } = body ?? {};
 
   if (!title || typeof title !== "string") {
     return NextResponse.json({ error: "title required" }, { status: 400 });
@@ -39,13 +52,20 @@ export async function PUT(req: Request, { params }: { params: Params }) {
     return NextResponse.json(updated);
   } catch (err: any) {
     console.error("PUT error:", err);
-    return NextResponse.json({ error: "Producto no encontrado o error DB" }, { status: 404 });
+    return NextResponse.json(
+      { error: "Producto no encontrado o error DB" },
+      { status: 404 }
+    );
   }
 }
 
-export async function DELETE(_: Request, { params }: { params: Params }) {
-  const inventoryIdNum = Number(params.inventoryId);
-  const productIdNum = Number(params.productId);
+export async function DELETE(
+  _: Request,
+  { params }: { params: Promise<Params> }
+) {
+  const resolvedParams = await params;
+  const inventoryIdNum = Number(resolvedParams.inventoryId);
+  const productIdNum = Number(resolvedParams.productId);
 
   if (Number.isNaN(inventoryIdNum) || Number.isNaN(productIdNum)) {
     return NextResponse.json({ error: "Invalid params" }, { status: 400 });
@@ -53,7 +73,10 @@ export async function DELETE(_: Request, { params }: { params: Params }) {
 
   const authRes = await authorizeSalespersonForInventory(inventoryIdNum);
   if (!authRes.ok) {
-    return NextResponse.json({ error: authRes.message }, { status: authRes.status });
+    return NextResponse.json(
+      { error: authRes.message },
+      { status: authRes.status }
+    );
   }
 
   try {
@@ -61,6 +84,9 @@ export async function DELETE(_: Request, { params }: { params: Params }) {
     return NextResponse.json({ ok: true });
   } catch (err: any) {
     console.error("DELETE error:", err);
-    return NextResponse.json({ error: "Producto no encontrado o error DB" }, { status: 404 });
+    return NextResponse.json(
+      { error: "Producto no encontrado o error DB" },
+      { status: 404 }
+    );
   }
 }
