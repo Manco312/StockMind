@@ -14,6 +14,7 @@ interface Product {
   title: string
   price: number
   stock: number
+  minimumStock: number
   batches: Batch[]
 }
 
@@ -24,6 +25,7 @@ interface EditProductFormProps {
 export default function EditProductForm({ product }: EditProductFormProps) {
   const router = useRouter()
   const [newPrice, setNewPrice] = useState(product.price)
+  const [newMinStock, setNewMinStock] = useState(product.minimumStock)
   const [editStock, setEditStock] = useState(false)
   const [selectedBatch, setSelectedBatch] = useState<number | null>(null)
   const [newQuantity, setNewQuantity] = useState<number | null>(null)
@@ -35,10 +37,17 @@ export default function EditProductForm({ product }: EditProductFormProps) {
     try {
       const updates: any = {}
 
+      // Si el precio cambió
       if (newPrice !== product.price) {
         updates.price = newPrice
       }
 
+      // Si el stock mínimo cambió
+      if (newMinStock !== product.minimumStock) {
+        updates.minimumStock = newMinStock
+      }
+
+      // Si se modificó el stock
       if (editStock && selectedBatch && newQuantity !== null) {
         updates.stockUpdate = {
           batchId: selectedBatch,
@@ -72,13 +81,30 @@ export default function EditProductForm({ product }: EditProductFormProps) {
 
   return (
     <div className="space-y-6">
+      {message && <p className="text-center mt-4 text-sm text-gray-700">{message}</p>}
+      
       {/* Cambiar precio */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Precio de venta</label>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          Precio de venta
+        </label>
         <input
           type="number"
           value={newPrice}
           onChange={(e) => setNewPrice(parseFloat(e.target.value))}
+          className="w-full border border-gray-700 rounded-lg p-2 focus:ring-blue-500 focus:border-blue-500 text-gray-700"
+        />
+      </div>
+
+      {/* Cambiar stock mínimo */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          Stock mínimo
+        </label>
+        <input
+          type="number"
+          value={newMinStock}
+          onChange={(e) => setNewMinStock(parseInt(e.target.value))}
           className="w-full border border-gray-700 rounded-lg p-2 focus:ring-blue-500 focus:border-blue-500 text-gray-700"
         />
       </div>
@@ -130,7 +156,6 @@ export default function EditProductForm({ product }: EditProductFormProps) {
         {loading ? "Guardando..." : "Guardar Cambios"}
       </button>
 
-      {message && <p className="text-center mt-4 text-sm text-gray-700">{message}</p>}
     </div>
   )
 }

@@ -5,7 +5,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   try {
     const { id } = await params
     const productId = parseInt(id)
-    const { price, stockUpdate } = await req.json()
+    const { price, stockUpdate, minimumStock } = await req.json()
 
     const product = await prisma.product.findUnique({ where: { id: productId } })
     if (!product) return NextResponse.json({ error: "Producto no encontrado" }, { status: 404 })
@@ -38,12 +38,26 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
       await prisma.productUpdate.create({
         data: {
           type: "stock_update",
-          message: `Stock del lote ${batch.code} actualizado a ${newQuantity} unidades.`,
+          message: `Stock del lote ${batch.code} actualizado de ${product.minimumStock} a ${newQuantity} unidades.`,
           productId,
           date: new Date(),
         },
       })
       updatesCreated.push("stock_update")
+    }
+
+    // Actualización del stock mínimo
+    if (minimumStock !== undefined && minimumStock !== product.minimumStock) {
+      updates.minimumStock = minimumStock
+      await prisma.productUpdate.create({
+        data: {
+          type: "minimum_stock_update",
+          message: `Stock mínimo cambiado de ${product.minimumStock} a ${minimumStock} unidades.`,
+          productId,
+          date: new Date(),
+        },
+      })
+      updatesCreated.push("minimum_stock_update")
     }
 
     if (Object.keys(updates).length > 0) {

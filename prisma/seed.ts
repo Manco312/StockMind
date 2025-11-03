@@ -8,14 +8,18 @@ async function main() {
   console.log("🌱 Iniciando seed con stock mínimo y relaciones correctas...");
 
   // Limpiar datos existentes
+  await prisma.notification.deleteMany();
+  await prisma.alert.deleteMany();
+  await prisma.productUpdate.deleteMany();
   await prisma.order.deleteMany();
   await prisma.batch.deleteMany();
   await prisma.product.deleteMany();
-  await prisma.inventory.deleteMany();
-  await prisma.salesperson.deleteMany();
   await prisma.inventoryManager.deleteMany();
+  await prisma.salesperson.deleteMany();
+  await prisma.inventory.deleteMany();
   await prisma.store.deleteMany();
   await prisma.user.deleteMany();
+
 
   // 1. Crear usuarios
   const hashedPassword = await bcrypt.hash("123456", 10);
@@ -75,7 +79,7 @@ async function main() {
     data: { inventoryId: distributorInventory.id },
   });
 
-  // 4. Crear productos con stock mínimo aleatorio
+  // 4. Crear productos base
   const realProducts = [
     { title: "Arroz Diana 1kg", description: "Arroz blanco de alta calidad", category: "Alimentos", price: 5000 },
     { title: "Aceite Girasol 1L", description: "Aceite vegetal puro para cocinar", category: "Alimentos", price: 8000 },
@@ -99,20 +103,21 @@ async function main() {
     { title: "Cloro 1L", description: "Cloro para desinfección", category: "Limpieza", price: 3000 },
   ];
 
-  // Crear productos en la distribuidora 
-  const distributorProducts = await Promise.all( 
-     realProducts.map((product) => prisma.product.create({ 
-      data: { 
-        ...product, 
-        available: true, 
-        minimumStock: Math.floor(Math.random() * 11) + 10, // Stock mínimo entre 10 y 20
-        inventoryId: distributorInventory.id, 
-      }, 
-    }) 
-  ) 
-);
+  // 5. Crear productos en la distribuidora
+  const distributorProducts = await Promise.all(
+    realProducts.map((product) =>
+      prisma.product.create({
+        data: {
+          ...product,
+          available: true,
+          minimumStock: Math.floor(Math.random() * 11) + 10, // 10–20
+          inventoryId: distributorInventory.id,
+        },
+      })
+    )
+  );
 
-  // Crear productos en tienda
+  // 6. Crear productos en la tienda con relación al producto de la distribuidora
   const storeProducts = await Promise.all(
     distributorProducts.slice(0, 12).map((product) =>
       prisma.product.create({
@@ -124,18 +129,20 @@ async function main() {
           available: Math.random() > 0.2,
           inventoryId: storeInventory.id,
           minimumStock: Math.floor(Math.random() * 11) + 10,
+          distributorProductId: product.id, // ✅ relación correcta
         },
       })
     )
   );
 
-  // 5. Crear lotes correctamente relacionados
+
+  // 7. Crear lotes correctamente relacionados
   const batches = await Promise.all(
     distributorProducts.slice(0, 10).map((product) =>
       prisma.batch.create({
         data: {
           code: `BATCH-${product.id}-${Date.now()}`,
-          quantity: Math.floor(Math.random() * 100) + 50,
+          quantity: Math.floor(Math.random() * 100) + 100,
           expirationDate: new Date(Date.now() + 45 * 24 * 60 * 60 * 1000),
           location: "Bodega Central",
           productId: product.id,
@@ -145,7 +152,25 @@ async function main() {
     )
   );
 
-  // 6. Crear pedidos realistas con fechas variadas
+  // 7.1. Crear un batch inicial para cada producto de la tienda
+  await Promise.all(
+    storeProducts.slice(0, 10).map((product) =>
+      prisma.batch.create({
+        data: {
+          code: `BATCH-${product.id}-${Date.now()}`,
+          quantity: Math.floor(Math.random() * 41) + 10, // entre 10 y 50 unidades
+          purchasePrice: Math.floor(product.price * 0.6), // precio de compra aprox. 60% del precio de venta
+          expirationDate: new Date(Date.now() + Math.floor(Math.random() * 90 + 30) * 24 * 60 * 60 * 1000), // entre 1 y 4 meses
+          location: `Estante ${Math.floor(Math.random() * 5) + 1}`,
+          productId: product.id,
+          inventoryId: storeInventory.id,
+        },
+      })
+    )
+  );
+
+
+  // 8. Crear pedidos realistas con fechas variadas
   const orders = [];
 
   // Pedidos recientes (últimos 30 días) - alta actividad
@@ -222,7 +247,7 @@ async function main() {
     data: orders,
   });
 
-  // 7. Calcular estadísticas para verificación
+  // 9. Calcular estadísticas para verificación
   const totalOrders = await prisma.order.count();
   const receivedOrders = await prisma.order.count({
     where: { status: "received" },

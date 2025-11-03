@@ -37,15 +37,27 @@ export default async function EditProductPage({ params }: PageProps) {
     }
   
     const manager = await prisma.inventoryManager.findUnique({
-    where: { userId: user.id },
-    include: {
-        store: {
+        where: { userId: user.id },
         include: {
-            inventory: true,
+          store: {
+            include: {
+              inventory: {
+                include: {
+                  offeredProducts: {
+                    include: {
+                      batches: {
+                        where: {
+                          expired: false, // Only include non-expired batches
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
         },
-        },
-    },
-    });
+      })
 
     if (!manager) {
       redirect("/accounting/login")
@@ -54,15 +66,29 @@ export default async function EditProductPage({ params }: PageProps) {
   const productId = parseInt(params.id)
 
   const product = await prisma.product.findUnique({
-    where: { id: productId, inventoryId: manager.store.inventory?.id },
+    where: { id: productId },
     include: {
-      batches: true, // para mostrar en el dropdown
+        batches: true,
+        inventory: {
+        include: {
+            store: {
+            include: { inventory: true },
+            },
+        },
+        },
     },
-  })
+    })
 
-  if (!product) {
-    return <div className="p-6 text-center text-red-600">Producto no encontrado</div>
-  }
+    if (!product) {
+    throw new Error("Producto no encontrado")
+    }
+
+    // Calcular el stock total sumando las cantidades de los lotes
+    const productWithStock = {
+    ...product,
+    stock: product.batches.reduce((total, batch) => total + batch.quantity, 0),
+    minStock: product.minimumStock,
+    }
 
   return (
     <EditProductClient
@@ -70,11 +96,12 @@ export default async function EditProductPage({ params }: PageProps) {
       userName={user.name}
       storeName={manager.store?.name || "Mi Tienda"}
       product={{
-        id: product.id,
-        title: product.title,
-        price: product.price,
-        stock: product.stock,
-        batches: product.batches.map((b) => ({
+        id: productWithStock.id,
+        title: productWithStock.title,
+        price: productWithStock.price,
+        stock: productWithStock.stock,
+        minimumStock: productWithStock.minStock,
+        batches: productWithStock.batches.map((b) => ({
           id: b.id,
           code: b.code,
           quantity: b.quantity,
