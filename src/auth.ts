@@ -26,13 +26,22 @@ export const authConfig = {
 
         const user = await prisma.user.findUnique({
           where: { email },
+          include: { inventoryManager: true }, // Include relation to check for role
         });
         if (!user) return null;
 
         const isValid = await bcrypt.compare(password, user.password);
         if (!isValid) return null;
 
-        return { id: String(user.id), name: user.name, email: user.email };
+        // Determine role based on the relation
+        const role = user.inventoryManager ? "INVENTORY_MANAGER" : "USER";
+
+        return {
+          id: String(user.id),
+          name: user.name,
+          email: user.email,
+          role: role, // Add role to the user object
+        };
       },
     }),
   ],
@@ -46,11 +55,20 @@ export const authConfig = {
       return true;
     },
     async jwt({ token, user }) {
-      if (user) token.user = user;
+      if (user) {
+        // On sign in, persist the role to the token
+        token.role = user.role;
+        token.user = user;
+      }
       return token;
     },
     async session({ session, token }) {
-      if (token.user) session.user = token.user as any;
+      if (session.user && token.role) {
+        session.user.role = token.role as string;
+      }
+      if (token.user) {
+        session.user = token.user as any;
+      }
       return session;
     },
   },
