@@ -7,6 +7,7 @@ type Product = {
   id: number;
   title: string;
   price: number;
+  inventoryId: number;
 };
 
 type OrderFormProps = {
@@ -106,7 +107,7 @@ export default function OrderForm({
           <option value="">Seleccionar producto...</option>
           {offeredProducts.map((product) => (
             <option key={product.id} value={product.id}>
-              {product.title} - ${product.price.toLocaleString()}
+              {product.title} - ${product.price.toLocaleString()} - {inventoryManager.userId}
             </option>
           ))}
         </select>

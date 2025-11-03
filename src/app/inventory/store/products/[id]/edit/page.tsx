@@ -36,59 +36,53 @@ export default async function EditProductPage({ params }: PageProps) {
       userType = "distributor"
     }
   
+    const { id } = await params
+    const productId = parseInt(id)
+    
     const manager = await prisma.inventoryManager.findUnique({
-        where: { userId: user.id },
-        include: {
-          store: {
-            include: {
-              inventory: {
-                include: {
-                  offeredProducts: {
-                    include: {
-                      batches: {
-                        where: {
-                          expired: false, // Only include non-expired batches
-                        },
-                      },
-                    },
-                  },
-                },
-              },
+      where: { userId: user.id },
+      select: {
+        store: {
+          select: {
+            inventory: {
+              select: { id: true },
             },
           },
         },
-      })
+      },
+    });
 
     if (!manager) {
-      redirect("/accounting/login")
+      redirect("/accounting/login");
     }
 
-  const productId = parseInt(params.id)
+    const inventoryId = manager.store?.inventory?.id;
 
-  const product = await prisma.product.findUnique({
-    where: { id: productId },
-    include: {
-        batches: true,
-        inventory: {
-        include: {
-            store: {
-            include: { inventory: true },
-            },
+    if (!inventoryId) {
+      throw new Error("Inventario no encontrado para este usuario");
+    }
+
+    const product = await prisma.product.findUnique({
+      where: { id: productId },
+      include: {
+        batches: {
+          where: {
+            expired: false,
+            inventoryId: inventoryId,
+          },
         },
-        },
-    },
-    })
+      },
+    });
 
     if (!product) {
-    throw new Error("Producto no encontrado")
+      throw new Error("Producto no encontrado");
     }
 
-    // Calcular el stock total sumando las cantidades de los lotes
     const productWithStock = {
-    ...product,
-    stock: product.batches.reduce((total, batch) => total + batch.quantity, 0),
-    minStock: product.minimumStock,
-    }
+      ...product,
+      stock: product.batches.reduce((total, batch) => total + batch.quantity, 0),
+      minStock: product.minimumStock,
+    };
 
   return (
     <EditProductClient

@@ -49,8 +49,8 @@ export async function PATCH(
       },
     });
 
-    const inventoryId = order.inventoryManager.store?.inventory?.id;
-    if (typeof inventoryId !== "number") {
+    const storeInventoryId = order.inventoryManager.store?.inventory?.id;
+    if (typeof storeInventoryId !== "number") {
       return NextResponse.json(
         { error: "No se encontró un inventario válido para el pedido." },
         { status: 400 }

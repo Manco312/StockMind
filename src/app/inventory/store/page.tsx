@@ -34,21 +34,12 @@ export default async function InventoryStorePage() {
 
   const manager = await prisma.inventoryManager.findUnique({
     where: { userId: user.id },
-    include: {
+    select: {
+      userId: true,
       store: {
-        include: {
+        select: {
           inventory: {
-            include: {
-              offeredProducts: {
-                include: {
-                  batches: {
-                    where: {
-                      expired: false, // Only include non-expired batches
-                    },
-                  },
-                },
-              },
-            },
+            select: { id: true },
           },
         },
       },
@@ -59,7 +50,25 @@ export default async function InventoryStorePage() {
     redirect("/accounting/login")
   }
 
-  const productsWithStock = (manager.store?.inventory?.offeredProducts || []).map((product) => ({
+  const inventoryId = manager.store?.inventory?.id
+
+  const inventory = await prisma.inventory.findUnique({
+    where: { id: inventoryId },
+    include: {
+      offeredProducts: {
+        include: {
+          batches: {
+            where: {
+              expired: false,
+              inventoryId, 
+            },
+          },
+        },
+      },
+    },
+  })
+
+  const productsWithStock = (inventory?.offeredProducts || []).map((product) => ({
     id: product.id,
     title: product.title,
     description: product.description,
