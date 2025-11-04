@@ -15,6 +15,12 @@ import {
 
 type UserType = "distributor" | "salesperson" | "inventory_manager";
 
+interface Insight { 
+  type: "success" | "warning" | "error" | "info";
+  title: string;
+  message: string;
+}
+
 interface AnalyticsData {
   store?: any;
   salesByProduct?: Record<number, any>;
@@ -27,6 +33,10 @@ interface AnalyticsData {
   inventoryValue?: number;
   salesByStore?: Record<number, any>;
   activeStores?: number;
+  // ¡NUEVAS PROPIEDADES PARA EL DISTRIBUIDOR!
+  highRotationProductsGlobal?: any[]; 
+  lowRotationProductsGlobal?: any[];
+  insights?: Insight[]; // <--- ¡AÑADE ESTA!
 }
 
 interface AIReportData {
@@ -176,7 +186,7 @@ export default function IntelligenceClient({
     const filteredData = getFilteredData();
     if (!filteredData) return [];
 
-    const insights = [];
+    const insights = filteredData.insights || [];
 
     if (userType === "inventory_manager") {
       // Insights para Inventory Manager
@@ -937,7 +947,55 @@ export default function IntelligenceClient({
             </div>
           )}
         </div>
+        {/* ========================================================================= */}
+        {/* NUEVA SECCIÓN: ROTACIÓN GLOBAL (Solo para Distribuidor/Salesperson) */}
+        {userType === "salesperson" && filteredData?.highRotationProductsGlobal && (
+            <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 border border-gray-100 mt-6">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                    <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                    Rotación de Productos Global (Top/Bottom 5)
+                </h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Top 5 de Productos Globales */}
+                    <div>
+                        <h4 className="font-bold text-sm mb-2 text-green-700">Productos de Alta Rotación (Prioridad de Stock)</h4>
+                        <ul className="space-y-2">
+                            {filteredData.highRotationProductsGlobal.map((item: any, index: number) => (
+                                <li key={item.product.id} className="p-3 bg-green-50 rounded-lg flex justify-between items-center text-sm">
+                                    <span className="font-medium text-gray-800 truncate">
+                                        {index + 1}. {item.product.title}
+                                    </span>
+                                    <span className="text-green-600 font-semibold flex-shrink-0">
+                                        {item.totalQuantity} uds.
+                                    </span>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
 
+                    {/* Bottom 5 de Productos Globales */}
+                    <div>
+                        <h4 className="font-bold text-sm mb-2 text-yellow-700">Productos de Baja Rotación (Evaluar Liquidación)</h4>
+                        <ul className="space-y-2">
+                            {filteredData.lowRotationProductsGlobal.map((item: any, index: number) => (
+                                <li key={item.product.id} className="p-3 bg-yellow-50 rounded-lg flex justify-between items-center text-sm">
+                                    <span className="font-medium text-gray-800 truncate">
+                                        {index + 1}. {item.product.title}
+                                    </span>
+                                    <span className="text-yellow-600 font-semibold flex-shrink-0">
+                                        {item.totalQuantity} uds.
+                                    </span>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        )}
+        {/* ========================================================================= */}
         {/* Insights y Recomendaciones */}
         <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 border border-gray-100 w-full max-w-full overflow-hidden">
           <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
