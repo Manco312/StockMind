@@ -5,6 +5,58 @@ import IntelligenceClient from "./IntelligenceClient";
 
 type UserType = "distributor" | "salesperson" | "inventory_manager";
 
+
+// 1. Definición de la Interfaz Insight (para tipado)
+interface Insight {
+  type: "success" | "warning" | "error" | "info";
+  title: string;
+  message: string;
+}
+
+// 2. Definición de la Función generateDistributorInsights
+function generateDistributorInsights(
+  highRotation: any[],
+  lowRotation: any[],
+  numStores: number
+): Insight[] {
+  const insights: Insight[] = [];
+
+  // Sugerencia para Alta Rotación
+  if (highRotation.length > 0) {
+    const topProduct = highRotation[0];
+    insights.push({
+      type: "success",
+      title: `Priorizar el stock de ${topProduct.product.title}`,
+      message: `El producto con mayor rotación a nivel global es **${
+        topProduct.product.title
+      }** con ${topProduct.totalQuantity} unidades vendidas. Asegura un stock preventivo en todas tus ${numStores} tiendas para evitar faltantes.`,
+    });
+  }
+
+  // Sugerencia para Baja Rotación
+  if (lowRotation.length > 0) {
+    const lowestProduct = lowRotation[0];
+    insights.push({
+      type: "warning",
+      title: `Evaluar la continuidad de ${lowestProduct.product.title}`,
+      message: `**${lowestProduct.product.title}** tiene la rotación más baja (${lowestProduct.totalQuantity} unidades). Considera una promoción o liquidación cruzada para liberar inventario, o su descontinuación.`,
+    });
+  }
+  
+  // Sugerencia de Consolidación
+  if (numStores > 1 && lowRotation.length > 0) {
+      insights.push({
+          type: "info",
+          title: "Consolidación de productos de baja rotación",
+          message: "Para reducir costos de almacenamiento, considera mover el stock restante de los productos de baja rotación a una sola tienda para facilitar su venta o liquidación final.",
+      });
+  }
+
+
+  return insights;
+}
+
+
 // Función para consolidar datos de análisis
 async function getAnalyticsData(userId: number, userType: UserType) {
   // Usamos ID como proxy de tiempo (IDs más altos = más recientes)
@@ -170,11 +222,51 @@ async function getAnalyticsData(userId: number, userType: UserType) {
       store.uniqueProducts = store.uniqueProducts.size;
     });
 
+    // --- NUEVO ANÁLISIS GLOBAL DE ROTACIÓN PARA EL DISTRIBUIDOR ---
+    
+    // 1. Análisis de rotación de productos AGREGADO (igual que el Inventory Manager,
+    // pero usando TODOS los recentOrders del Distribuidor, que son de todas las tiendas)
+    const salesByProductGlobal: Record<number, any> = {};
+    recentOrders.forEach((order) => {
+        const productId = order.productId;
+        if (!salesByProductGlobal[productId]) {
+            salesByProductGlobal[productId] = {
+                product: order.product,
+                totalQuantity: 0,
+                totalValue: 0,
+                orders: 0,
+            };
+        }
+        salesByProductGlobal[productId].totalQuantity += order.quantity;
+        salesByProductGlobal[productId].totalValue += order.price;
+        salesByProductGlobal[productId].orders += 1;
+    });
+
+    // 2. Productos con alta rotación global (Top 5)
+    const highRotationProductsGlobal = Object.values(salesByProductGlobal)
+        .sort((a: any, b: any) => b.totalQuantity - a.totalQuantity)
+        .slice(0, 5);
+
+    // 3. Productos con baja rotación global (Bottom 5)
+    const lowRotationProductsGlobal = Object.values(salesByProductGlobal)
+        .sort((a: any, b: any) => a.totalQuantity - b.totalQuantity)
+        .slice(0, 5);
+
+    // 4. Generación de Sugerencias (Insights)
+    const insights = generateDistributorInsights(
+        highRotationProductsGlobal, 
+        lowRotationProductsGlobal, 
+        Object.keys(salesByStore).length // Número de tiendas
+    );
+
     return {
       salesByStore,
       totalSales,
       totalOrders,
       activeStores: Object.keys(salesByStore).length,
+      highRotationProductsGlobal,
+      lowRotationProductsGlobal,
+      insights,
     };
   }
 
