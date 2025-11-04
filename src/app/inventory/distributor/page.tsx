@@ -28,7 +28,7 @@ export default function DistributorInventoryPage() {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const res = await fetch("/api/inventory/4/distributor-products");
+        const res = await fetch("/api/inventory/8/distributor-products");
         if (!res.ok) throw new Error("Error cargando productos");
         const data = await res.json();
         setProducts(data);
