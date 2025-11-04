@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import AppLayout from "@/components/AppLayout";
+import OrdersAnalysisModal from "@/components/OrdersAnalysisModal";
 import {
   BarChart,
   Bar,
@@ -68,6 +69,9 @@ export default function IntelligenceClient({
   const [aiReport, setAiReport] = useState<AIReportData | null>(null);
   const [isLoadingAiReport, setIsLoadingAiReport] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
+
+  // <-- Nuevo estado para abrir/cerrar el modal de análisis de pedidos
+  const [analysisOpen, setAnalysisOpen] = useState(false);
 
   const handleGenerateAiReport = async () => {
     setIsLoadingAiReport(true);
@@ -539,20 +543,32 @@ export default function IntelligenceClient({
                       período seleccionado
                     </p>
                   </div>
-                  <div className="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center flex-shrink-0">
-                    <svg
-                      className="w-6 h-6 text-white"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
+
+                  {/* ---- Aquí añadimos el botón que abre el modal ---- */}
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center flex-shrink-0">
+                      <svg
+                        className="w-6 h-6 text-white"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                        />
+                      </svg>
+                    </div>
+
+                    <button
+                      onClick={() => setAnalysisOpen(true)}
+                      className="text-sm px-3 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition"
+                      aria-label="Ver análisis de pedidos"
                     >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-                      />
-                    </svg>
+                      Ver análisis
+                    </button>
                   </div>
                 </div>
               </div>
@@ -1116,6 +1132,9 @@ export default function IntelligenceClient({
           </div>
         </div>
       </div>
+
+      {/* Orders Analysis Modal */}
+      <OrdersAnalysisModal open={analysisOpen} onClose={() => setAnalysisOpen(false)} />
     </AppLayout>
   );
 }
