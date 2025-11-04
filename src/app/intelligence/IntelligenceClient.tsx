@@ -2,6 +2,16 @@
 
 import { useState } from "react";
 import AppLayout from "@/components/AppLayout";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
 
 type UserType = "distributor" | "salesperson" | "inventory_manager";
 
@@ -19,6 +29,28 @@ interface AnalyticsData {
   activeStores?: number;
 }
 
+interface AIReportData {
+  potentialShortages: {
+    productId: string;
+    name: string;
+    daysUntilStockout: number;
+    currentStock: number;
+    avgDailySales: number;
+  }[];
+  lowTurnoverProducts: {
+    productId: string;
+    name: string;
+    salesLast30Days: number;
+    currentStock: number;
+  }[];
+  demandPatterns: {
+    productId: string;
+    name: string;
+    trend: string;
+    changePercentage: number;
+  }[];
+}
+
 interface IntelligenceClientProps {
   userType: UserType;
   userName: string;
@@ -32,6 +64,32 @@ export default function IntelligenceClient({
 }: IntelligenceClientProps) {
   const [selectedPeriod, setSelectedPeriod] = useState("30d");
   const [selectedCategory, setSelectedCategory] = useState("all");
+
+  const [aiReport, setAiReport] = useState<AIReportData | null>(null);
+  const [isLoadingAiReport, setIsLoadingAiReport] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+
+  const handleGenerateAiReport = async () => {
+    setIsLoadingAiReport(true);
+    setAiError(null);
+    setAiReport(null);
+
+    try {
+      const response = await fetch("/api/inventory/ai-report");
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(
+          errorData.error || "Error al generar el reporte de IA"
+        );
+      }
+      const data: AIReportData = await response.json();
+      setAiReport(data);
+    } catch (error: any) {
+      setAiError(error.message);
+    } finally {
+      setIsLoadingAiReport(false);
+    }
+  };
 
   // Función para filtrar datos basándose en los filtros seleccionados
   const getFilteredData = () => {
@@ -567,6 +625,156 @@ export default function IntelligenceClient({
             </>
           )}
         </div>
+
+        {/* Análisis con Inteligencia Artificial */}
+        {userType === "inventory_manager" && (
+          <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 border border-gray-100 w-full max-w-full overflow-hidden">
+            <div className="flex justify-between items-start mb-4">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                  <svg
+                    className="w-5 h-5 text-indigo-600"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M10 2a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 0110 2zM5.03 5.03a.75.75 0 010 1.06l-1.06 1.06a.75.75 0 11-1.06-1.06l1.06-1.06a.75.75 0 011.06 0zM16.09 6.09a.75.75 0 011.06 0l1.06 1.06a.75.75 0 01-1.06 1.06l-1.06-1.06a.75.75 0 010-1.06zM10 15.5a5.5 5.5 0 100-11 5.5 5.5 0 000 11zM10 18a.75.75 0 01.75.75v1.5a.75.75 0 01-1.5 0v-1.5A.75.75 0 0110 18zM3.91 13.91a.75.75 0 011.06 0l1.06 1.06a.75.75 0 01-1.06 1.06l-1.06-1.06a.75.75 0 010-1.06zM14.97 14.97a.75.75 0 010 1.06l-1.06 1.06a.75.75 0 11-1.06-1.06l1.06-1.06a.75.75 0 011.06 0z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  Análisis con Inteligencia Artificial
+                </h3>
+                <p className="text-sm text-gray-500 mt-1">
+                  Detecta patrones y proyecciones para optimizar tu inventario.
+                </p>
+              </div>
+              <button
+                onClick={handleGenerateAiReport}
+                disabled={isLoadingAiReport}
+                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:bg-indigo-300 transition-colors text-sm font-semibold flex-shrink-0"
+              >
+                {isLoadingAiReport ? "Generando..." : "Generar Reporte de IA"}
+              </button>
+            </div>
+
+            {isLoadingAiReport && (
+              <div className="text-center py-10">
+                <p className="text-gray-600">
+                  Analizando datos, por favor espera...
+                </p>
+              </div>
+            )}
+            {aiError && (
+              <div className="text-center py-10 text-red-600 bg-red-50 p-4 rounded-lg">
+                <p>Error: {aiError}</p>
+              </div>
+            )}
+
+            {aiReport && (
+              <div className="space-y-8 mt-4">
+                {/* Tablas de Reporte */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div>
+                    <h4 className="font-semibold text-gray-700 mb-2">
+                      Posibles Escaseces (Próximos 30 días)
+                    </h4>
+                    <div className="overflow-x-auto border rounded-lg">
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                              Producto
+                            </th>
+                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                              Stock Actual
+                            </th>
+                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                              Agotamiento (días)
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {aiReport.potentialShortages.map((p) => (
+                            <tr key={p.productId}>
+                              <td className="px-4 py-3 text-sm text-gray-800">
+                                {p.name}
+                              </td>
+                              <td className="px-4 py-3 text-sm text-gray-600">
+                                {p.currentStock}
+                              </td>
+                              <td className="px-4 py-3 text-sm font-bold text-red-600">
+                                {p.daysUntilStockout}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-gray-700 mb-2">
+                      Productos de Baja Rotación
+                    </h4>
+                    <div className="overflow-x-auto border rounded-lg">
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                              Producto
+                            </th>
+                            <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                              Ventas (30 días)
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {aiReport.lowTurnoverProducts.map((p) => (
+                            <tr key={p.productId}>
+                              <td className="px-4 py-3 text-sm text-gray-800">
+                                {p.name}
+                              </td>
+                              <td className="px-4 py-3 text-sm text-gray-600">
+                                {p.salesLast30Days}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Gráfico de Patrones de Demanda */}
+                <div>
+                  <h4 className="font-semibold text-gray-700 mb-2">
+                    Patrones de Demanda
+                  </h4>
+                  <div
+                    className="w-full h-72 bg-gray-50 p-4 rounded-lg border"
+                    style={{ userSelect: "none" }}
+                  >
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={aiReport.demandPatterns}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="name" />
+                        <YAxis />
+                        <Tooltip />
+                        <Legend />
+                        <Bar
+                          dataKey="changePercentage"
+                          name="% Cambio Demanda"
+                          fill="#8884d8"
+                        />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Análisis Detallados */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 w-full max-w-full overflow-hidden">

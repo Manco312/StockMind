@@ -110,6 +110,7 @@ model Batch {
   productId      Int
   inventoryId    Int
   expired        Boolean   @default(false)
+  purchasePrice  Int       @default(0)
   inventory      Inventory @relation(fields: [inventoryId], references: [id], onDelete: Cascade)
   product        Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
   orders         Order[]
