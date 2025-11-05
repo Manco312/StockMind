@@ -6,16 +6,19 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   try {
-    const orderId = parseInt(params.id);
+    const { id } = await params
+    const orderId = parseInt(id)
     const body = await req.json();
     const { quantity, expirationDate, location } = body;
 
     const order = await prisma.order.findUnique({
       where: { id: orderId },
       include: {
-        product: true,
+        product: {
+          include: {distributorProduct: true}
+        },
         salesperson: { 
-          include: { inventory: true } 
+          include: { inventory: { include: { batches: true } } } 
         },
         inventoryManager: {
           include: { store: { include: { inventory: true } } },
@@ -41,6 +44,48 @@ export async function PATCH(
       );
     }
 
+    const distributorInventory = order.salesperson?.inventory;
+    if (!distributorInventory) {
+      return NextResponse.json(
+        { message: "El distribuidor no tiene un inventario asociado." },
+        { status: 400 }
+      );
+    }
+
+    const productBatches = await prisma.batch.findMany({
+      where: {
+        inventoryId: distributorInventory.id,
+        productId: order.product?.distributorProduct?.id,
+        expired: false,
+        quantity: { gt: 0 },
+      },
+    });
+
+    const totalStock = productBatches.reduce((acc, batch) => acc + batch.quantity, 0);
+
+    if (totalStock < order.quantity) {
+      return NextResponse.json(
+        { message: `Stock insuficiente ➡️ Disponible: ${totalStock}, requerido: ${order.quantity}` },
+        { status: 400 }
+      );
+    }
+
+    let remaining = order.quantity;
+
+    for (const batch of productBatches) {
+      if (remaining <= 0) break;
+
+      const deduction = Math.min(batch.quantity, remaining);
+      remaining -= deduction;
+
+      await prisma.batch.update({
+        where: { id: batch.id },
+        data: {
+          quantity: batch.quantity - deduction,
+        },
+      });
+    }
+
     const updatedOrder = await prisma.order.update({
       where: { id: orderId },
       data: { 
@@ -48,14 +93,6 @@ export async function PATCH(
         createdAt: new Date(), 
       },
     });
-
-    const storeInventoryId = order.inventoryManager.store?.inventory?.id;
-    if (typeof storeInventoryId !== "number") {
-      return NextResponse.json(
-        { error: "No se encontró un inventario válido para el pedido." },
-        { status: 400 }
-      );
-    }
 
     const purchasePrice =
       order.quantity > 0 ? order.price / order.quantity : 0;
@@ -75,7 +112,15 @@ export async function PATCH(
       },
     });
 
-    // Notificamos al encargado de tienda
+    await prisma.productUpdate.create({
+      data: {
+        productId: order.productId,
+        type: "sale", 
+        message: `Venta de ${order.quantity} unidades a tienda ${order.inventoryManager.store?.name}`,
+        date: new Date(),
+      },
+    });
+
     await prisma.notification.create({
       data: {
         recipientId: updatedOrder.inventoryManagerId,

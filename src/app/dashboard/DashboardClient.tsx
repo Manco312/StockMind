@@ -121,7 +121,7 @@ export default function DashboardClient({
         <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-4 sm:mb-6">
           {userType === "inventory_manager"
             ? "Actualizaciones Recientes de Inventario"
-            : "Pedidos Recientes"}
+            : "Pedidos esperando respuesta"}
         </h2>
         <div className="bg-white rounded-lg sm:rounded-xl shadow-lg overflow-hidden">
           <div className="overflow-x-auto">
@@ -155,7 +155,14 @@ export default function DashboardClient({
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {dashboardData.orders.map((order, index) => (
+                { dashboardData.orders.length === 0 ? (
+                  <tr>
+                  <td colSpan={7} className="text-center py-12 text-gray-500">
+                    No se encontraron pedidos sin responder.
+                  </td>
+                </tr>
+                ) : (
+                dashboardData.orders.map((order, index) => (
                   <tr key={index} className={index === 1 ? "bg-purple-50" : ""}>
                     <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
                       <input
@@ -181,7 +188,8 @@ export default function DashboardClient({
                       {order.date}
                     </td>
                   </tr>
-                ))}
+                ))
+              )}
               </tbody>
             </table>
           </div>
