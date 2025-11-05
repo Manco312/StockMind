@@ -4,7 +4,7 @@ import { authorizeSalespersonForInventory } from "src/lib/authorizeDistributor";
 
 type Params = { inventoryId: string };
 
-// listar productos del inventario
+// Listar productos del inventario con cantidad total (solo de ese inventario)
 export async function GET(_: Request, context: { params: Promise<Params> }) {
   const { inventoryId } = await context.params;
   const inventoryIdNum = Number(inventoryId);
@@ -14,13 +14,24 @@ export async function GET(_: Request, context: { params: Promise<Params> }) {
 
   const products = await prisma.product.findMany({
     where: { inventoryId: inventoryIdNum },
+    include: {
+      batches: {
+        where: { inventoryId: inventoryIdNum },
+        select: { quantity: true, expired: true },
+      },
+    },
     orderBy: { id: "desc" },
   });
 
-  return NextResponse.json(products);
+  const productsWithTotals = products.map((p) => ({
+    ...p,
+    totalQuantity: p.batches.reduce((acc, b) => acc + b.quantity, 0),
+  }));
+
+  return NextResponse.json(productsWithTotals);
 }
 
-// crear nuevo producto
+// Crear nuevo producto
 export async function POST(req: Request, context: { params: Promise<Params> }) {
   const { inventoryId } = await context.params;
   const inventoryIdNum = Number(inventoryId);
