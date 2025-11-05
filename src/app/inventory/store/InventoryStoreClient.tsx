@@ -189,15 +189,8 @@ export default function InventoryStoreClient({ userType, userName, storeName, pr
                   </div>
                 </div>
 
-                <div className="mt-4 flex items-center justify-between">
-                  <span
-                    className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                      product.available ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
-                    }`}
-                  >
-                    {product.available ? "Disponible" : "Agotado"}
-                  </span>
-
+                <div className="mt-4 flex items-right justify-between">
+                  
                   <button
                     onClick={() => router.push(`/inventory/store/products/${product.id}/edit`)}
                     className="text-blue-600 hover:text-blue-700 text-sm font-medium"

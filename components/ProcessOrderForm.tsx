@@ -34,7 +34,7 @@ export default function ProcessOrderForm({ order }: Props) {
       setMessage({ text: "✅ Pedido aceptado correctamente", type: "success" });
       setTimeout(() => router.back(), 1500);
     } catch {
-      setMessage({ text: "Error al aceptar el pedido", type: "error" });
+      setMessage({ text: data.message || "Error al aceptar el pedido", type: "error" });
     } finally {
       setLoading(false);
     }
