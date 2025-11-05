@@ -63,11 +63,15 @@ export default async function Dashboard() {
 
   if (!user) redirect("/accounting/login");
 
-  let storeId = null;
+  let storeId, inventoryId = null;
 
   // Solo los inventory_manager tienen tienda
   if (user?.inventoryManager?.store) {
     storeId = user.inventoryManager.storeId;
+  }
+
+  if (user?.salesperson?.inventory) {
+    inventoryId = user?.salesperson?.inventory.id
   }
 
   let userType: UserType = "distributor";
@@ -134,7 +138,7 @@ export default async function Dashboard() {
   async function getSalesOrDistributorDashboard() {
     const pendingOrders = await getRecentOrders("pending");
     const totalStores = await getTotalStores();
-    const availableProducts = await getAvailableProducts(8);
+    const availableProducts = await getAvailableProducts(inventoryId);
     const receivedOrders = await getRecentOrders("received");
     const cancelledOrders = await getRecentOrders("cancelled");
 
