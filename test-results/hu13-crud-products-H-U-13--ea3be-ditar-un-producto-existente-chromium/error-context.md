@@ -1,0 +1,65 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - heading "StockMind" [level=2] [ref=e5]
+      - navigation [ref=e6]:
+        - list [ref=e7]:
+          - listitem [ref=e8]:
+            - button "🏠 Inicio" [ref=e9]:
+              - generic [ref=e10]: 🏠
+              - generic [ref=e11]: Inicio
+          - listitem [ref=e12]:
+            - button "📦 Productos" [ref=e13]:
+              - generic [ref=e14]: 📦
+              - generic [ref=e15]: Productos
+          - listitem [ref=e16]:
+            - button "🏪 Tiendas" [ref=e17]:
+              - generic [ref=e18]: 🏪
+              - generic [ref=e19]: Tiendas
+          - listitem [ref=e20]:
+            - button "📊 Estadísticas" [ref=e21]:
+              - generic [ref=e22]: 📊
+              - generic [ref=e23]: Estadísticas
+      - generic [ref=e24]:
+        - button "Añadir Tienda" [ref=e25]
+        - button "Registrar Encargado" [ref=e26]
+        - button "Cerrar Sesión" [ref=e27]
+    - generic [ref=e28]:
+      - banner [ref=e29]:
+        - generic [ref=e30]:
+          - heading "Home Preventista" [level=1] [ref=e32]
+          - generic [ref=e34]:
+            - generic:
+              - img
+            - textbox "Buscar tienda" [ref=e35]
+          - generic [ref=e36]:
+            - generic [ref=e37]:
+              - generic [ref=e38]: Pedidos
+              - button "Ver notificaciones" [ref=e39]:
+                - img [ref=e40]
+            - button "Abrir configuración" [ref=e42]:
+              - img [ref=e43]
+            - button "Abrir perfil de usuario" [ref=e46]:
+              - img [ref=e47]
+      - main [ref=e49]:
+        - heading "Inventario del Distribuidor" [level=1] [ref=e51]
+        - generic [ref=e53]:
+          - generic [ref=e55]:
+            - heading "Agregar nuevo producto" [level=3] [ref=e56]
+            - textbox "Nombre del producto" [ref=e57]
+            - textbox "Descripción" [ref=e58]
+            - spinbutton [ref=e59]
+            - generic [ref=e60]:
+              - checkbox "Disponible" [checked] [ref=e61]
+              - text: Disponible
+            - button "Agregar" [ref=e62]
+          - generic [ref=e63]:
+            - heading "Catálogo de Productos" [level=2] [ref=e64]
+            - paragraph [ref=e65]: Cargando productos...
+  - button "Open Next.js Dev Tools" [ref=e71] [cursor=pointer]:
+    - img [ref=e72]
+  - alert [ref=e75]
+```
